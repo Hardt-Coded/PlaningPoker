@@ -14,11 +14,13 @@ let toolbar state dispatch =
         Mui.typography [ 
             typography.variant.h6
             typography.color.inherit'
-            typography.children "Feliz.MaterialUI"
+            typography.children "F# Planing Poker"
             typography.classes.root c.appBarTitle 
         ]
 
-        // Light/dark mode button
+        
+
+        //Light/dark mode button
         Mui.tooltip [ 
             tooltip.title (
                 match state.Theme with
@@ -50,4 +52,18 @@ let toolbar state dispatch =
                 ]
             ) 
         ] 
+    ]
+
+
+let loadingSpinner isVisible =
+    Mui.backdrop [
+        backdrop.open' isVisible
+        backdrop.in' isVisible
+        backdrop.children [
+            Mui.circularProgress [
+                //circularProgress.size 5
+                circularProgress.color.inherit'
+            ]
+        ]
+        
     ]

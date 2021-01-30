@@ -38,6 +38,8 @@ module Domain =
         let create name =
             Player (Guid.NewGuid(), name)
 
+        let extract (Player (id,name)) = id,name
+
 
     type GameId = private GameId of string
 
@@ -130,4 +132,6 @@ module Api =
             finishRound : GameId -> Player -> Result<GameModel,string> Async 
             playCard    : GameId -> Player -> Card -> Result<GameModel,string> Async 
         }
+
+    
     

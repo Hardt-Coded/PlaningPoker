@@ -17,13 +17,7 @@
             appBarTitle = styles.create [
                 style.flexGrow 1
             ]
-            drawer = styles.create [
-                style.width (length.px drawerWidth)
-                style.flexShrink 0  // TODO: Does this do anything?
-            ]
-            drawerPaper = styles.create [
-                style.width (length.px drawerWidth)
-            ]
+            
             content = styles.create [
                 style.width 0  // TODO: is there a better way to prevent long code boxes extending past the screen?
                 style.flexGrow 1
@@ -34,6 +28,16 @@
             ]
             toolbar = styles.create [
                 yield! theme.mixins.toolbar
+            ]
+            centerPaper = styles.create [
+                style.textAlign.center
+                style.paddingTop 2
+                style.paddingBottom 2
+            ]
+
+            playerCard = styles.create [
+                style.textAlign.center
+                style.padding 4
             ]
         |}
     )
@@ -76,3 +80,5 @@
                 appBar.color.default'
             ]
         ])
+
+        let a = 1

@@ -19,8 +19,10 @@ let createPokerApiFromContext (httpContext: HttpContext) : IPokerApi =
 
 let webApp : HttpHandler = 
     Remoting.createApi()
+    |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromContext createPokerApiFromContext
     |> Remoting.buildHttpHandler
+    
 
 
 let configureServices (services: IServiceCollection) =

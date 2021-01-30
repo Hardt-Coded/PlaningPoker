@@ -1,19 +1,27 @@
 module App
 
-open Elmish
-open Elmish.React
+open Feliz
+open Feliz.UseElmish
+open Feliz.MaterialUI
 
-#if DEBUG
-open Elmish.Debug
-open Elmish.HMR
-#endif
 
-Program.mkProgram Index.init Index.update Index.view
-#if DEBUG
-|> Program.withConsoleTrace
-#endif
-|> Program.withReactSynchronous "elmish-app"
-#if DEBUG
-|> Program.withDebugger
-#endif
-|> Program.run
+
+[<ReactComponent>]
+let PlaningPoker () =
+    //let isDarkMode = Hooks.useMediaQuery "@media (prefers-color-scheme: dark)"
+    let isDarkMode = true
+    let state, dispatch = 
+        React.useElmish(
+            Index.init isDarkMode,
+            Index.update,
+            [| isDarkMode |> unbox |]
+
+        )
+
+    Index.view state dispatch
+    //Html.h1 "Test"
+
+
+
+
+
