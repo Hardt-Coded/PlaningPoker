@@ -329,9 +329,14 @@ let renderStartView (c:CustomStyles) state dispatch =
     ]
     
 
-           
 
-open Styling
+
+let renderAdminView (c:CustomStyles) state dispatch =
+    Html.div [
+        
+    ]
+
+
 let renderInGameView c state inGameState dispatch =
     Html.div [
         match state.CurrentPlayer with
