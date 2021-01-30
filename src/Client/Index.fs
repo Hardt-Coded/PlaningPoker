@@ -1,36 +1,88 @@
 module Index
 
 open Elmish
-open Thoth.Fetch
-
+open Fable.Remoting.Client
+open Shared.Api
 open Shared
+open Shared.Domain
+open Models
+open Feliz.MaterialUI
 
-type Model =
-    { Hello: string }
+   
 
-type Msg =
-    | GotHello of string
 
-let init() =
-    let model : Model =
-        { Hello = "" }
-    let getHello() = Fetch.get<unit, string> Route.hello
-    let cmd = Cmd.OfPromise.perform getHello () GotHello
-    model, cmd
+module Commands =
 
-let update msg model =
+    let pokerApi =
+        Remoting.createApi()
+        |> Remoting.withRouteBuilder Route.builder
+        |> Remoting.buildProxy<IPokerApi>
+
+    let loadState gameId =
+        async {
+            let! state = pokerApi.getState gameId
+            match state with
+            | Ok state -> return SetCurrentGameState state
+            | Error e -> return OnError e
+        }
+        |> Cmd.OfAsync.result
+
+
+let init () =
+    let isDarkMode = Hooks.useMediaQuery "@media (prefers-color-scheme: dark)"
+    {
+        CurrentGameState = Start
+        GameId = None
+        Name = ""
+        Error = ""
+        Theme = if isDarkMode then Dark else Light
+    }, Cmd.none
+
+
+
+let update (msg:Models.Msg) state =
     match msg with
-    | GotHello hello ->
-        { model with Hello = hello }, Cmd.none
+    | GameMsg _ ->
+        state, Cmd.none
+    | ChangeName name ->
+        { state with Name = name }, Cmd.none
+    | SetGameId gameId ->
+        { state with GameId = Some gameId }, Cmd.none
+    | LoadState ->
+        match state.GameId with
+        | None ->
+            state, Cmd.none
+        | Some gameId ->
+            state, Commands.loadState gameId
+    | SetCurrentGameState gameModel ->
+        { state with CurrentGameState = gameModel; Error = "" }, Cmd.none
+    | OnError error ->
+        { state with Error = error }, Cmd.none
+    | ToggleTheme ->
+        let newTheme = 
+            match state.Theme with
+            | Dark -> Light
+            | Light -> Dark
+        { state with Theme = newTheme }, Cmd.none
+        
 
-open Fable.React
-open Fable.React.Props
 
-let view model dispatch =
-    div [ Style [ TextAlign TextAlignOptions.Center; Padding 40 ] ] [
-        div [] [
-            img [ Src "favicon.png" ]
-            h1 [] [ str "PlaningPoker" ]
-            h2 [] [ str model.Hello ]
+open Feliz
+open Feliz.MaterialUI
+open Styling
+
+let view state dispatch =
+    let c = useStyles ()
+    Mui.themeProvider [
+        themeProvider.theme (match state.Theme with | Dark -> Theme.dark | Light -> Theme.light)
+        themeProvider.children [
+            Mui.textField [
+                prop.className "myInput"
+                textField.variant.filled
+                textField.label "Input"
+                textField.value state.Name
+                textField.onChange (ChangeName >> dispatch)
+                textField.helperText ["Current value: "; state.Name ]   
+            ]
         ]
     ]
