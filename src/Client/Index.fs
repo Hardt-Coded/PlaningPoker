@@ -157,8 +157,7 @@ open Feliz
 open Styling
 
 
-let renderCreateGameView state dispatch =
-    let c = useStyles ()
+let renderCreateGameView (c:CustomStyles) state dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
@@ -222,8 +221,7 @@ let renderCreateGameView state dispatch =
     ]
 
 
-let renderJoinGameView state dispatch =
-    let c = useStyles ()
+let renderJoinGameView (c:CustomStyles) state dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
@@ -300,8 +298,8 @@ let renderJoinGameView state dispatch =
         ]
     ]
 
-let renderStartView state dispatch =
-    let c = useStyles ()
+
+let renderStartView (c:CustomStyles) state dispatch =
     Html.div [
         Mui.grid [
             grid.container true
@@ -323,9 +321,9 @@ let renderStartView state dispatch =
         ]
 
         if (state.Id = "") then
-            renderCreateGameView state dispatch
+            renderCreateGameView c state dispatch
         else
-            renderJoinGameView state dispatch
+            renderJoinGameView c state dispatch
 
 
     ]
@@ -333,9 +331,8 @@ let renderStartView state dispatch =
 
            
 
-
-let renderInGameView state inGameState dispatch =
-    let c = useStyles ()
+open Styling
+let renderInGameView c state inGameState dispatch =
     Html.div [
         match state.CurrentPlayer with
         | None ->
@@ -374,60 +371,7 @@ let renderInGameView state inGameState dispatch =
                     
                 ]
             ]
-            
 
-
-        //Mui.grid [
-        //    grid.item true
-        //    grid.xs._6
-        //    grid.children [
-        //        Mui.paper [
-        //            paper.classes.root c.centerPaper
-        //            paper.children [
-        //                Mui.grid [
-        //                    grid.container true
-        //                    grid.children [
-        //                        Mui.grid [
-        //                            grid.item true
-        //                            grid.xs._12
-        //                            grid.children [
-        //                                Html.h2 "Create a new game!"
-        //                            ]
-        //                        ]
-
-        //                        Mui.grid [
-        //                            grid.item true
-        //                            grid.xs._12
-        //                            grid.children [
-        //                                Mui.textField [
-        //                                    textField.variant.outlined
-        //                                    textField.label "Enter your Name"
-        //                                    textField.defaultValue state.Name
-        //                                    textField.onChange (ChangeName >> dispatch)
-
-        //                                ]
-        //                            ]
-        //                        ]
-
-        //                        Mui.grid [
-        //                            grid.item true
-        //                            grid.xs._12
-        //                            grid.children [
-        //                                Mui.button [
-        //                                    prop.onClick (fun _ -> dispatch CreateGame)
-        //                                    prop.text "Create!"
-        //                                ]
-        //                            ]
-        //                        ]
-        //                    ]
-        //                ]
-                        
-                        
-                        
-        //            ]
-        //        ]
-        //    ]
-        //]
     ]
 
 
@@ -452,7 +396,7 @@ let view state dispatch =
                                     Elements.toolbar state dispatch
                                 ]
                             ]
-                            //drawer state dispatch
+                            
                             Html.main [
                                 prop.className c.content
                                 prop.children [
@@ -460,9 +404,9 @@ let view state dispatch =
 
                                     match state.CurrentGameState with
                                     | Start ->
-                                        renderStartView state dispatch
+                                        renderStartView c state dispatch
                                     | InGame inGameState ->
-                                        renderInGameView state inGameState dispatch
+                                        renderInGameView c state inGameState dispatch
 
                                     Dialog.AlertDialog (state.Error<>"") (fun () -> dispatch ClearError) "Error" state.Error
 

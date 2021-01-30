@@ -5,9 +5,19 @@
     open Fable.MaterialUI.Icons
     open Fable.MaterialUI.MaterialDesignIcons
 
+
+    type CustomStyles = {
+        root: string
+        appBar: string
+        appBarTitle: string
+        content: string
+        toolbar: string
+        centerPaper: string
+        playerCard: string
+    }
+
     let useStyles = Styles.makeStyles(fun (styles:StyleCreator<unit>) theme ->
-        let drawerWidth = 240
-        {|
+        {
             root = styles.create [
                 style.display.flex
             ]
@@ -17,18 +27,17 @@
             appBarTitle = styles.create [
                 style.flexGrow 1
             ]
-            
+        
             content = styles.create [
                 style.width 0  // TODO: is there a better way to prevent long code boxes extending past the screen?
                 style.flexGrow 1
                 style.padding (theme.spacing 3)
             ]
-            nestedMenuItem = styles.create [
-                style.paddingLeft (theme.spacing 4)
-            ]
+        
             toolbar = styles.create [
                 yield! theme.mixins.toolbar
             ]
+
             centerPaper = styles.create [
                 style.textAlign.center
                 style.paddingTop 2
@@ -39,7 +48,7 @@
                 style.textAlign.center
                 style.padding 4
             ]
-        |}
+        }
     )
 
 
