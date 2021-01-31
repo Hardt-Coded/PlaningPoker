@@ -28,7 +28,7 @@
         | Some currentPlayer, InGame state, StartRound ->
             let (_, admin) = state.Game |> Game.extract
             if (currentPlayer = admin) then
-                InGame { state with State = InRound } |> Ok
+                InGame { state with State = InRound; PlayedCards = [] } |> Ok
             else
                 $"Only the admin can start a round!" |> Error
 

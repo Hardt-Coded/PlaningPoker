@@ -43,14 +43,17 @@
             ]
 
             centerPaper = styles.create [
-                style.textAlign.center
-                style.paddingTop 2
-                style.paddingBottom 2
+                style.padding (theme.spacing(3, 2))
+                style.display.flex
+                style.flexDirection.column
+                style.justifyContent.center
             ]
 
             playerCard = styles.create [
-                style.textAlign.center
-                style.padding 4
+                style.padding (theme.spacing(1))
+                style.display.flex
+                style.flexDirection.column
+                style.justifyContent.center
             ]
 
             loginPaper = styles.create [

@@ -70,7 +70,7 @@ let loadingSpinner isVisible =
 
 let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
-let card isOpen (value:CardValue) =
+let card isOpen (onClick:unit->unit) (value:CardValue) =
     let pic = 
         match rnd.Next(0,4) with
         | 0 -> "spades"
@@ -115,33 +115,50 @@ let card isOpen (value:CardValue) =
         
     
     Html.div [
-        prop.className "playingCards"
         prop.style [
-            style.width 200
+            style.overflow.hidden
+            style.display.flex
+            style.alignItems.center
+            style.justifyContent.center
+            style.minHeight 140
+            style.minWidth 110
+            style.height (length.percent 100)
+            style.width (length.percent 100)
+            style.custom ("box-sizing","initial")
         ]
         prop.children [
             if isOpen then
                 Html.div [
                     prop.className $"card rank-{rank} {pic}"
+                    prop.onClick (fun _ -> onClick())
+                    prop.style [
+                        style.custom ("boxSizing","initial")
+                        style.transform.scale 1.5
+                    ]
                     prop.children [
                         Html.span [
                             prop.className "rank"
-                            prop.text $"{rank}"
-                            
+                            prop.text $"{value}"
+                                
                         ]
                         Html.span [
                             prop.className "suit"
-                            prop.dangerouslySetInnerHTML "&clubs;"
-                            
+                            prop.dangerouslySetInnerHTML $"&{pic};"
+                                
                         ]
                     ]
                 ]
             else
-                Html.span [
+                Html.div [
                     prop.className "playingCards card back"
+                    prop.style [
+                        style.custom ("boxSizing","initial")
+                        style.transform.scale 1.5
+                    ]
                 ]
         ]
     ]
+    
     
 
 

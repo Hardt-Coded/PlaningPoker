@@ -62,7 +62,27 @@ let createGame currentPlayer =
     |> Cmd.ofSub
 
 
-let joinGameFromCookies () =
+let resetWhenGameNotExists id =
+    fun dispatch ->
+        async {
+            dispatch <| IsLoading true
+            if id <> "" then
+                let! state = pokerApi.getState (GameId.create id)
+                match state with
+                | Ok _ ->
+                    ()
+                | Error e ->
+                    Browser.Dom.console.log(e)
+                    dispatch <| Reset
+            else
+                ()
+
+            dispatch <| IsLoading false
+        } |> Async.StartImmediate
+    |> Cmd.ofSub
+
+
+let joinGameFromCookiesOrCheckGameExisits () =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
@@ -83,9 +103,9 @@ let joinGameFromCookies () =
                         dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
                 | Error e ->
                     Browser.Dom.console.log(e)
+                    dispatch <| Reset
             | _ ->
                 ()
-
             dispatch <| IsLoading false
         } |> Async.StartImmediate
     |> Cmd.ofSub
@@ -137,6 +157,11 @@ let setCookies gameId player =
         Cookies.setGameId gameId
     |> Cmd.ofSub
 
+let removeCookies () =
+    fun _ ->
+        Cookies.removeAllCookies ()
+    |> Cmd.ofSub
+
     
 
 
@@ -163,20 +188,39 @@ module WebSocket =
                 else
                     ()
 
-            let rec connect () =
+            let rec connect ws : WebSocket =
                 let host = Browser.Dom.window.location.host
                 let url = sprintf "ws://%s/socket/poker" host
-                let ws = WebSocket.Create(url)
+                let ws =
+                    match ws with
+                    | None ->
+                        WebSocket.Create(url)
+                    | Some ws -> ws
 
                 ws.onopen <- (fun _ -> printfn "connection opened!")
-                ws.onclose <- (fun _ ->
-                    printfn "connection closed!"    
-                    promise {
-                        do! Promise.sleep 2000
-                        connect()
-                    }
+                ws.onclose <- (fun e ->
+                    printfn "connection closed!"
+                    // code 42 (I will actually close the connection)
+                    if (e.code <> 4999) then
+                        promise {
+                            do! Promise.sleep 2000
+                            connect (Some ws) |> ignore
+                        }
+                    else
+                        promise { return (); }
                 )
                 ws.onmessage <- onWebSocketMessage
+                ws
 
-            connect()
+            let ws = connect None
+            dispatch <| SetWebSocketHandler ws
+
+
+        |> Cmd.ofSub
+
+
+    let disconnectWebsocket (ws:WebSocket) =
+        fun dispatch ->
+            ws.onclose <- (fun _ -> dispatch Reset)
+            ws.close()
         |> Cmd.ofSub

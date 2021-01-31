@@ -28,6 +28,8 @@ module Domain =
 
         let create value =
             Card value
+
+        let extract (Card value) = value
     
 
 

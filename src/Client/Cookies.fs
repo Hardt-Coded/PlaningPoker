@@ -55,4 +55,10 @@ let setCurrentPlayer (player:Player) =
     JsCookie.set PlayerCookie (player |> playerToStr) {| expires = 1|}
 
 
+let removeAllCookies () =
+    JsCookie.remove GameIdCookie
+    JsCookie.remove PlayerCookie
+
+
+
 

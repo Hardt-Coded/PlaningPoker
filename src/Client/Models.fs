@@ -7,6 +7,7 @@
         | Light
 
 
+    open Browser.Types
 
     type Model =
         { 
@@ -18,6 +19,7 @@
             Id: string
             Error: string
             IsLoading:bool
+            WebSocket: WebSocket option
         }
     
     type Msg =
@@ -32,6 +34,8 @@
         | SetCurrentGameState of GameModel
         | SetCurrentPlayer of Player
         | ConnectToWebSocket of GameId
+        | SetWebSocketHandler of WebSocket
+        | DisconnectWebSocket
         | OnError of string
         | ClearError
 
@@ -40,3 +44,4 @@
         | Navigate of string list
         | SetCookies
 
+        | Reset
