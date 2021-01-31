@@ -8,57 +8,7 @@ open Shared.Domain
 open Models
 open Feliz.MaterialUI
 open Feliz.Router
-
-
-   
-
-
-module Commands =
-
-    let pokerApi =
-        Remoting.createApi()
-        |> Remoting.withRouteBuilder Route.builder
-        |> Remoting.buildProxy<IPokerApi>
-
-
-    let private sendCommandWithSucceed f succeedDispatch =
-        fun dispatch ->
-            async {
-                dispatch <| IsLoading true
-
-                let! state = f()
-                succeedDispatch dispatch
-                do! Async.Sleep 2000
-                match state with
-                | Ok state -> 
-                    Browser.Dom.console.log ($"%A{state}")
-                    
-                    dispatch <| SetCurrentGameState state
-                | Error e -> dispatch <| OnError e
-
-                dispatch <| IsLoading false
-            } |> Async.StartImmediate
-        |> Cmd.ofSub
-
-
-    let private sendCommand f =
-        sendCommandWithSucceed f (ignore)
-
-    
-
-
-    let loadState gameId =
-        sendCommand (fun () -> pokerApi.getState gameId)
-        
-        
-
-
-    let createGame player =
-        sendCommandWithSucceed (fun () -> pokerApi.createGame player) (fun dispatch -> dispatch <| SetCurrentPlayer player)
-
-
-    let joinGame gameId player =
-        sendCommandWithSucceed (fun () -> pokerApi.joinGame gameId player) (fun dispatch -> dispatch <| SetCurrentPlayer player)
+open Fable.SimpleJson
         
 
 
@@ -78,7 +28,6 @@ let init isDarkMode =
         PlayedCards = []
     }
     {
-        //CurrentGameState = myState
         CurrentGameState = Start
         GameId = None
         CurrentPlayer = None
@@ -88,8 +37,6 @@ let init isDarkMode =
         IsLoading = false
         Id = id
     }, Cmd.none
-
-
 
 
 let update (msg:Models.Msg) state =
@@ -136,6 +83,8 @@ let update (msg:Models.Msg) state =
         { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.none
     | SetCurrentPlayer player ->
         { state with CurrentPlayer = Some player }, Cmd.none
+    | ConnectToWebSocket gameId ->
+        state, Commands.WebSocket.connectWebSocketCmd gameId
     | OnError error ->
         { state with Error = error }, Cmd.none
     | ClearError ->
@@ -157,149 +106,107 @@ open Feliz
 open Styling
 
 
-let renderCreateGameView (c:CustomStyles) state dispatch =
+open Fable.MaterialUI.Icons
+
+let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (onTextChange: string -> unit) (onClick:unit -> unit) state  =
+    Mui.container [
+        container.component' "main"
+        container.maxWidth.xs
+        container.children [
+          Mui.paper [
+            paper.classes.root classes.loginPaper
+            prop.children [
+              if state.IsLoading then
+                Mui.circularProgress [
+                  //circularProgress.classes.root classes.progressBar
+                  circularProgress.color.secondary
+                ]
+              else
+                Mui.avatar [
+                  avatar.classes.root classes.loginAvatar
+                  avatar.children [
+                    lockOutlinedIcon []
+                  ]
+                ]
+    
+              Mui.typography [
+                typography.component' "h1"
+                typography.variant.h5
+                typography.children title
+              ]
+              Html.form [
+                prop.className classes.loginForm
+                prop.children [
+                  Mui.textField [
+                    textField.value state.Name
+                    textField.onChange onTextChange
+                    textField.variant.outlined
+                    textField.margin.normal
+                    textField.required true
+                    textField.fullWidth true
+                    textField.id "name"
+                    textField.label "Name"
+                    textField.name "name"
+                    textField.autoComplete "name"
+                    textField.autoFocus true
+                  ]
+
+                  Mui.button [
+                    prop.type'.submit
+                    button.fullWidth true
+                    button.variant.contained
+                    button.color.primary
+                    button.classes.root classes.loginSubmit
+                    button.children buttonText
+                    button.disabled state.IsLoading
+                    prop.onClick (fun e ->
+                      e.preventDefault ()
+                      onClick()
+                    )
+                  ]
+                  
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+
+
+
+let renderCreateGameView (classes:CustomStyles) state dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
         grid.children [
-            Mui.grid [ grid.item true; grid.xs._3 ]
-        
-            Mui.grid [
-                grid.item true
-                grid.xs._6
-                grid.children [
-                    Mui.paper [
-                        paper.classes.root c.centerPaper
-                        paper.children [
-                            Mui.grid [
-                                grid.container true
-                                grid.children [
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Html.h2 "Create a new game!"
-                                        ]
-                                    ]
-        
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Mui.textField [
-                                                textField.variant.outlined
-                                                textField.label "Enter your Name"
-                                                textField.defaultValue state.Name
-                                                textField.onChange (ChangeName >> dispatch)
-        
-                                            ]
-                                        ]
-                                    ]
-        
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Mui.button [
-                                                prop.onClick (fun _ -> dispatch CreateGame)
-                                                prop.text "Create!"
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                                        
-                                        
-                                        
-                        ]
-                    ]
-                ]
-            ]
-        
-            Mui.grid [ grid.item true; grid.xs._3 ]
+            renderLoginForm 
+                classes
+                "Create Game"
+                "Create Game!"
+                (ChangeName>>dispatch)
+                (fun () -> dispatch CreateGame)
+                state
         ]
     ]
 
 
-let renderJoinGameView (c:CustomStyles) state dispatch =
+let renderJoinGameView (classes:CustomStyles) state dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
         grid.children [
-            Mui.grid [ grid.item true; grid.xs._3 ]
-        
-            Mui.grid [
-                grid.item true
-                grid.xs._6
-                grid.children [
-                    Mui.paper [
-                        paper.classes.root c.centerPaper
-                        paper.children [
-                            Mui.grid [
-                                grid.container true
-                                grid.children [
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Html.h2 "Join game!"
-                                        ]
-                                    ]
-        
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Mui.textField [
-                                                textField.variant.outlined
-                                                textField.label "Enter Id"
-                                                textField.defaultValue state.Id
-                                                textField.onChange (ChangeId >> dispatch)
-        
-                                            ]
-                                        ]
-                                    ]
-        
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Mui.textField [
-                                                textField.variant.outlined
-                                                textField.label "Enter Your Name"
-                                                textField.defaultValue state.Name
-                                                textField.onChange (ChangeName >> dispatch)
-        
-                                            ]
-                                        ]
-                                    ]
-        
-                                    Mui.grid [
-                                        grid.item true
-                                        grid.xs._12
-                                        grid.children [
-                                            Mui.button [
-                                                prop.onClick (fun _ -> dispatch JoinGame)
-                                                prop.text "Join!"
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                                        
-                                        
-                                        
-                        ]
-                    ]
-                ]
-            ]
-        
-            Mui.grid [ grid.item true; grid.xs._3 ]
+            renderLoginForm 
+                classes
+                "Join Game"
+                "Join Game!"
+                (ChangeName>>dispatch)
+                (fun () -> dispatch JoinGame)
+                state
         ]
     ]
 
 
-let renderStartView (c:CustomStyles) state dispatch =
+let renderStartView (classes:CustomStyles) state dispatch =
     Html.div [
         Mui.grid [
             grid.container true
@@ -310,7 +217,7 @@ let renderStartView (c:CustomStyles) state dispatch =
                     grid.xs._12
                     grid.children [
                         Mui.paper [
-                            paper.classes.root c.centerPaper
+                            paper.classes.root classes.centerPaper
                             paper.children [
                                 Html.h1 "Welcome to the F# Planing Poker Game"
                             ]
@@ -321,9 +228,9 @@ let renderStartView (c:CustomStyles) state dispatch =
         ]
 
         if (state.Id = "") then
-            renderCreateGameView c state dispatch
+            renderCreateGameView classes state dispatch
         else
-            renderJoinGameView c state dispatch
+            renderJoinGameView classes state dispatch
 
 
     ]
@@ -331,20 +238,35 @@ let renderStartView (c:CustomStyles) state dispatch =
 
 
 
-let renderAdminView (c:CustomStyles) state dispatch =
+let renderAdminView (classes:CustomStyles) state dispatch =
     Html.div [
         
     ]
 
 
-let renderInGameView c state inGameState dispatch =
+let joinLink inGameState =
+    let (gameid, _) = Game.extract inGameState.Game
+    let linkAddress = $"{Browser.Dom.window.location.origin}/#{GameId.extract gameid}"
+    Mui.link [
+        prop.href linkAddress
+        link.variant "body2"
+        link.children "Join Link"
+        
+    ]
+    
+
+let renderInGameView classes state inGameState dispatch =
     Html.div [
         match state.CurrentPlayer with
-        | None ->
+        | None  ->
+            Mui.typography "Somethings seems to not working here!"
             ()
         | Some player ->
             let (_,name) = Player.extract player
+            let (id, admin) = Game.extract inGameState.Game
             Html.h1 $"Welcome {name}, let's play a game!"
+
+            joinLink inGameState
             
             Html.h1 $"{inGameState.State}"
             Html.h1 $"{inGameState.Game}"
@@ -360,7 +282,7 @@ let renderInGameView c state inGameState dispatch =
                             grid.xs.auto
                             grid.children [
                                 Mui.card [
-                                    card.classes.root c.playerCard
+                                    card.classes.root classes.playerCard
                                     card.children [
                                         Mui.typography [
                                             typography.align.center
@@ -382,7 +304,7 @@ let renderInGameView c state inGameState dispatch =
 
 let view state dispatch =
     Browser.Dom.console.log ($"%A{state}")
-    let c = useStyles ()
+    let classes = useStyles ()
     React.router [
         router.onUrlChanged (SetPath >> dispatch)
         router.children [
@@ -391,11 +313,11 @@ let view state dispatch =
                 themeProvider.children [
                     Mui.cssBaseline []
                     Html.div [
-                        prop.className c.root
+                        prop.className classes.root
                         prop.children [
                             Mui.cssBaseline []
                             Mui.appBar [
-                                appBar.classes.root c.appBar
+                                appBar.classes.root classes.appBar
                                 appBar.position.fixed'
                                 appBar.children [
                                     Elements.toolbar state dispatch
@@ -403,15 +325,18 @@ let view state dispatch =
                             ]
                             
                             Html.main [
-                                prop.className c.content
+                                prop.className classes.content
                                 prop.children [
-                                    Html.div [ prop.className c.toolbar ]
+                                    Html.div [ prop.className classes.toolbar ]
 
                                     match state.CurrentGameState with
                                     | Start ->
-                                        renderStartView c state dispatch
+                                        renderStartView classes state dispatch
                                     | InGame inGameState ->
-                                        renderInGameView c state inGameState dispatch
+                                        renderInGameView classes state inGameState dispatch
+
+
+                                    
 
                                     Dialog.AlertDialog (state.Error<>"") (fun () -> dispatch ClearError) "Error" state.Error
 

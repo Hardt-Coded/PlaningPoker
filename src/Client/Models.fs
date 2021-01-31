@@ -31,6 +31,7 @@
         | LoadState
         | SetCurrentGameState of GameModel
         | SetCurrentPlayer of Player
+        | ConnectToWebSocket of GameId
         | OnError of string
         | ClearError
 

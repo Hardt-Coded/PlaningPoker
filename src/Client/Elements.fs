@@ -61,7 +61,6 @@ let loadingSpinner isVisible =
         backdrop.in' isVisible
         backdrop.children [
             Mui.circularProgress [
-                //circularProgress.size 5
                 circularProgress.color.inherit'
             ]
         ]

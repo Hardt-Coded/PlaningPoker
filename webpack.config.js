@@ -38,7 +38,8 @@ var CONFIG = {
         '/socket/**': {
             // assuming the suave server is running on port 8083
             target: "http://localhost:8085",
-            changeOrigin: true
+            changeOrigin: true,
+            ws: true
         }
     },
     // Use babel-preset-env to generate JS compatible with most-used browsers.
