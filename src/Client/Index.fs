@@ -18,15 +18,7 @@ let init isDarkMode =
         match currentUrl with
         | [] -> ""
         | _ -> currentUrl.[0]
-        
 
-    Browser.Dom.console.log ($"%A{currentUrl}")
-    let myState = InGame {
-        Game = Game.create (Player.create "Test")
-        State = Beginning
-        Players = []
-        PlayedCards = []
-    }
     {
         CurrentGameState = Start
         GameId = None
@@ -36,7 +28,7 @@ let init isDarkMode =
         Theme = if isDarkMode then Dark else Light
         IsLoading = false
         Id = id
-    }, Cmd.none
+    }, Commands.joinGameFromCookies ()
 
 
 let update (msg:Models.Msg) state =
@@ -97,8 +89,20 @@ let update (msg:Models.Msg) state =
         { state with Theme = newTheme }, Cmd.none
     | IsLoading b ->
         { state with IsLoading = b }, Cmd.none
-    | SetPath segments ->
-        state, Cmd.none
+    | Navigate segments ->
+        match segments with
+        | [ id ] ->
+            state, Cmd.ofSub (fun _ -> Router.navigate (segments,[]))
+        | _ ->
+            state, Cmd.none
+    | SetCookies ->
+        let cmd =
+            match state.GameId, state.CurrentPlayer with
+            | Some gameId, Some player ->
+                Commands.setCookies gameId player
+            | _ ->
+                Cmd.none
+        state, cmd
         
 
 
@@ -294,10 +298,43 @@ let renderInGameView classes state inGameState dispatch =
                             ]
                             
                         ]
+
+                        
                         
                     
                 ]
             ]
+
+            Mui.grid [
+                grid.container true
+                grid.spacing._2
+                grid.children [
+                    Mui.grid [
+                        grid.item true
+                        grid.xs._1
+                        grid.children [
+                            Elements.card false Zero
+                        ]
+                    ]
+                ]
+            ]
+
+
+            
+            
+            Elements.card true Zero
+            Elements.card true One
+            Elements.card true Two
+            Elements.card true Three
+            Elements.card true Five
+            Elements.card true Eight
+            Elements.card true Thirtheen
+            Elements.card true Twenty
+            Elements.card true Fourty
+            Elements.card true Hundred
+            Elements.card true Stop
+            Elements.card true Coffee
+            Elements.card true IDontKnow
 
     ]
 
@@ -306,7 +343,6 @@ let view state dispatch =
     Browser.Dom.console.log ($"%A{state}")
     let classes = useStyles ()
     React.router [
-        router.onUrlChanged (SetPath >> dispatch)
         router.children [
             Mui.themeProvider [
                 themeProvider.theme (match state.Theme with | Dark -> Theme.dark | Light -> Theme.light)

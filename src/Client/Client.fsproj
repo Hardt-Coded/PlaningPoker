@@ -5,8 +5,10 @@
         <DefineConstants>FABLE_COMPILER</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
+        <None Include="styles\styling.scss" />
         <None Include="index.html" />
         <Compile Include="Models.fs" />
+        <Compile Include="Cookies.fs" />
         <Compile Include="Styling.fs" />
         <Compile Include="Elements.fs" />
         <Compile Include="Dialog.fs" />
@@ -28,6 +30,6 @@
         <PackageReference Include="Feliz.MaterialUI" Version="1.2.5" />
         <PackageReference Include="Feliz" Version="1.29.0" />
         <PackageReference Include="Feliz.UseElmish" Version="1.5.0" />
-			  <PackageReference Include="Feliz.Router" Version="3.5.0" />
+			<PackageReference Include="Feliz.Router" Version="3.5.0" />
     </ItemGroup>
 </Project>

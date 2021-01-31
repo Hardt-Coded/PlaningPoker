@@ -148,7 +148,7 @@ module.exports = {
             },
             {
                 test: /\.(sass|scss|css)$/,
-                exclude: /global.scss/,
+                exclude: /styling.scss/,
                 use: [
                     isProduction
                         ? MiniCssExtractPlugin.loader
@@ -167,7 +167,7 @@ module.exports = {
             },
             {
                 test: /\.(sass|scss|css)$/,
-                include: /global.scss/,
+                include: /styling.scss/,
                 use: [
                     isProduction
                         ? MiniCssExtractPlugin.loader

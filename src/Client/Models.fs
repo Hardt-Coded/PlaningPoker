@@ -37,5 +37,6 @@
 
         | ToggleTheme
         | IsLoading of bool
-        | SetPath of string list
+        | Navigate of string list
+        | SetCookies
 

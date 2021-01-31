@@ -38,7 +38,12 @@ module Domain =
         let create name =
             Player (Guid.NewGuid(), name)
 
+        let build (id:string) name =
+            Player (Guid id, name)
+
         let extract (Player (id,name)) = id,name
+
+        let (|ExtractPlayerInfo|) (Player (id,name)) = id,name
 
 
     type GameId = private GameId of string
@@ -48,6 +53,8 @@ module Domain =
         let create id = GameId id
 
         let extract (GameId id) = id
+
+        let (|GetGameId|) (GameId gameId) = gameId
 
 
 

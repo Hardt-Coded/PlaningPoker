@@ -51,9 +51,40 @@ let createGame currentPlayer =
                 | InGame { Game = Game.GetGameId gameId } ->
                     dispatch <| SetCurrentPlayer currentPlayer
                     dispatch <| ConnectToWebSocket gameId
+                    dispatch <| SetGameId gameId
+                    dispatch <| SetCookies
                 | _ ->
                     dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
             | Error e -> dispatch <| OnError e
+
+            dispatch <| IsLoading false
+        } |> Async.StartImmediate
+    |> Cmd.ofSub
+
+
+let joinGameFromCookies () =
+    fun dispatch ->
+        async {
+            dispatch <| IsLoading true
+            match Cookies.getCurrentPlayer(), Cookies.getGameId() with
+            | Some currentPlayer, Some gameId ->
+                let! state = pokerApi.joinGame gameId currentPlayer
+                match state with
+                | Ok state -> 
+                    dispatch <| SetCurrentGameState state
+                    match state with
+                    | InGame { Game = Game.GetGameId gameId } ->
+                        dispatch <| SetCurrentPlayer currentPlayer
+                        dispatch <| ConnectToWebSocket gameId
+                        dispatch <| SetGameId gameId
+                        dispatch <| SetCookies
+                        dispatch <| Navigate [ GameId.extract gameId ]
+                    | _ ->
+                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
+                | Error e ->
+                    Browser.Dom.console.log(e)
+            | _ ->
+                ()
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
@@ -72,6 +103,9 @@ let joinGame gameId currentPlayer =
                 | InGame { Game = Game.GetGameId gameId } ->
                     dispatch <| SetCurrentPlayer currentPlayer
                     dispatch <| ConnectToWebSocket gameId
+                    dispatch <| SetGameId gameId
+                    dispatch <| SetCookies
+                    dispatch <| Navigate [ GameId.extract gameId ]
                 | _ ->
                     dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
             | Error e -> dispatch <| OnError e
@@ -95,6 +129,15 @@ let finishRound gameId currentPlayer =
 
 let playCard gameId currentPlayer card = 
     sendCommand (fun () -> pokerApi.playCard gameId currentPlayer card)
+
+
+let setCookies gameId player =
+    fun _ ->
+        Cookies.setCurrentPlayer player
+        Cookies.setGameId gameId
+    |> Cmd.ofSub
+
+    
 
 
 
