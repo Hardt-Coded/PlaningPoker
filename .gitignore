@@ -19,3 +19,5 @@ src/Shared/*.js
 /_ReSharper.Caches/ReSharperPlatformVs16202_4bae76af.00
 /_ReSharper.Caches/ReSharperPlatformVs16202_4bae76af.PlaningPoker.00
 /src/Client/dist
+/src/Server/Properties/PublishProfiles
+/src/Server/Properties/ServiceDependencies/fancy-planing-poker - Web Deploy
