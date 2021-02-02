@@ -24,8 +24,8 @@ var CONFIG = {
     // See https://github.com/jantimon/html-webpack-plugin
     indexHtmlTemplate: "./src/Client/index.html",
     fsharpEntry: "./src/Client/Main.fs.js",
-    outputDir: "./dist",
-    assetsDir: "./public",
+    outputDir: "./src/Client/dist",
+    assetsDir: "./src/Client/public",
     devServerPort: 8080,
     // When using webpack-dev-server, you may need to redirect some calls
     // to a external API server. See https://webpack.js.org/configuration/dev-server/#devserver-proxy

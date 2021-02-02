@@ -18,3 +18,4 @@ src/Client/*.js
 src/Shared/*.js
 /_ReSharper.Caches/ReSharperPlatformVs16202_4bae76af.00
 /_ReSharper.Caches/ReSharperPlatformVs16202_4bae76af.PlaningPoker.00
+/src/Client/dist

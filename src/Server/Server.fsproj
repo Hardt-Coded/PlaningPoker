@@ -17,4 +17,7 @@
     <PackageReference Include="Saturn" Version="0.14.1" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="public\" />
+  </ItemGroup>
 </Project>
