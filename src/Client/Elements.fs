@@ -8,16 +8,40 @@ open Fable.MaterialUI.MaterialDesignIcons
 open Models
 open Shared.Domain
 
+let joinLink (gameid:GameId) =
+    let linkAddress = $"{Browser.Dom.window.location.origin}/#{GameId.extract gameid}"
+    Mui.link [
+        prop.href linkAddress
+        link.variant "h6"
+        link.children "Join Link"
+        
+    ]
+
+
 let toolbar state dispatch =
     let c = useStyles ()
+    let welcomeText =
+        match state.CurrentPlayer with
+        | None ->
+            ""
+        | Some player ->
+            let (_,name) = Player.extract player
+            $" - Welcome {name}!"
 
     Mui.toolbar [ 
         Mui.typography [ 
             typography.variant.h6
             typography.color.inherit'
-            typography.children "F# Planing Poker"
+            typography.children $"F#ncy Planing Poker{welcomeText}"
             typography.classes.root c.appBarTitle 
         ]
+
+        match state.CurrentGameState with
+        | GameModel.GotGameId gameId ->
+            joinLink gameId
+        | _ ->
+            ()
+        
 
         
 
@@ -43,7 +67,7 @@ let toolbar state dispatch =
 
         // GitHub button
         Mui.tooltip [ 
-            tooltip.title "F# Planing Poker on GitHub"
+            tooltip.title "F#ncy Planing Poker on GitHub"
             tooltip.children (
                 Mui.iconButton [ 
                     prop.href "https://github.com/DieselMeister/PlaningPoker"
@@ -70,14 +94,24 @@ let loadingSpinner isVisible =
 
 let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
-let card isOpen (onClick:unit->unit) (value:CardValue) =
+let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
     let pic = 
-        match rnd.Next(0,4) with
-        | 0 -> "spades"
-        | 1 -> "diams"
-        | 2 -> "hearts"
-        | 3 -> "clubs"
-        | _ -> "spades"
+        match value with
+        | Zero      -> "spades"
+        | Halve     -> "diams"
+        | One       -> "hearts"
+        | Two       -> "clubs"
+        | Three     -> "spades"
+        | Five      -> "diams"
+        | Eight     -> "hearts"
+        | Thirtheen -> "clubs"
+        | Twenty    -> "spades"
+        | Fourty    -> "diams"
+        | Hundred   -> "hearts"
+        | Coffee    -> "diams"
+        | Stop      -> "clubs"
+        | IDontKnow -> "spades"
+        
 
     let rank = 
         match value with
@@ -111,17 +145,24 @@ let card isOpen (onClick:unit->unit) (value:CardValue) =
         | Hundred   -> "100"
         | Coffee    -> "☕"
         | Stop      -> "🛑"
-        | IDontKnow -> "?"
+        | IDontKnow -> "WTF?"
         
     
+    let boxWidthFactor = 110.0 / 1.5
+    let boxHeighFactor = 140.0 / 1.5
+
+    let boxWidth = (boxWidthFactor * sizeFactor) |> int
+    let boxHeight = (boxHeighFactor * sizeFactor) |> int
+
+
     Html.div [
         prop.style [
             style.overflow.hidden
             style.display.flex
             style.alignItems.center
             style.justifyContent.center
-            style.minHeight 140
-            style.minWidth 110
+            style.minHeight boxHeight
+            style.minWidth boxWidth
             style.height (length.percent 100)
             style.width (length.percent 100)
             style.custom ("box-sizing","initial")
@@ -133,7 +174,7 @@ let card isOpen (onClick:unit->unit) (value:CardValue) =
                     prop.onClick (fun _ -> onClick())
                     prop.style [
                         style.custom ("boxSizing","initial")
-                        style.transform.scale 1.5
+                        style.transform.scale sizeFactor
                     ]
                     prop.children [
                         Html.span [
@@ -153,7 +194,7 @@ let card isOpen (onClick:unit->unit) (value:CardValue) =
                     prop.className "playingCards card back"
                     prop.style [
                         style.custom ("boxSizing","initial")
-                        style.transform.scale 1.5
+                        style.transform.scale sizeFactor
                     ]
                 ]
         ]

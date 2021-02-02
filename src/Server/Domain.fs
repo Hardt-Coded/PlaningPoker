@@ -9,9 +9,9 @@
             createGame admin
 
         | Some currentPlayer, InGame state, EndGame ->
-            let (_, admin) = state.Game |> Game.extract
+            let (id, admin) = state.Game |> Game.extract
             if (admin = currentPlayer) then
-                Start |> Ok
+                GameEnded id |> Ok
             else
                 $"only the admin can end a game!" |> Error
 
@@ -146,7 +146,7 @@
                                         gameStates 
                                         |> List.tryFind (fun (_, gs) -> 
                                             match gs, player with
-                                            | InGame { Game = Game.GetGameAdmin admin }, Some player ->
+                                            | GameModel.GotGameAdmin admin, Some player  ->
                                                 admin = player
                                             | _ ->
                                                 false
@@ -163,24 +163,16 @@
 
                                         match stateResult with
                                         | Ok newState ->
-                                            let getGameId gameState =
-                                                match gameState with
-                                                | (InGame { Game = Game.GetGameId id }) -> Ok id
-                                                | _ -> Error "Can not extract GameId"
-
-                                            match getGameId newState with
-                                            | Ok gameId ->
+                                            match newState with
+                                            | GameModel.GotGameId gameId ->
                                                 let newGameStates = (gameId, newState)::gameStates
                                                 return! loop newGameStates
 
-                                            | Error e ->
-                                                replyChannel.Reply (Error e)
+                                            | _ ->
+                                                replyChannel.Reply (Error "No GameId found!")
                                                 return! loop gameStates
                                         | Error _ ->
                                             return! loop gameStates
-
-                                
-                                
 
                                 | Some gameId ->
                                     let currentGameState = gameStates |> List.tryFind (fun (g,_) -> g = gameId)
@@ -192,9 +184,17 @@
                                     | Some (currentGame, currentGameState) ->
                                         let stateResult = update player msg currentGameState
                                         replyChannel.Reply stateResult
-                                        let gameStates =
-                                            match stateResult with
-                                            | Ok newState ->
+
+                                        // in case of endgame remove state
+                                        match stateResult with
+                                        | Ok (GameEnded _) ->
+                                            let newGameStates = 
+                                                gameStates 
+                                                |> List.filter (fun (g,s) ->g <> currentGame)
+                                            return! loop newGameStates
+
+                                        | Ok newState ->
+                                            let newGameStates = 
                                                 gameStates 
                                                 |> List.map (fun (g,s) ->
                                                     if g = currentGame then
@@ -202,10 +202,12 @@
                                                     else
                                                         (g,s)
                                                 )
-                                            | Error _ ->
-                                                gameStates
+                                            return! loop newGameStates
+                                        | Error e ->
+                                            return! loop gameStates
+                                        
                                 
-                                        return! loop gameStates
+                                        
                             }
 
                     loop []

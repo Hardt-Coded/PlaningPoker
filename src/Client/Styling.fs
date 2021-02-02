@@ -54,6 +54,7 @@
                 style.display.flex
                 style.flexDirection.column
                 style.justifyContent.center
+                style.minHeight 220
             ]
 
             loginPaper = styles.create [

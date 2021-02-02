@@ -43,5 +43,6 @@
         | IsLoading of bool
         | Navigate of string list
         | SetCookies
+        | ReInit of string list
 
         | Reset

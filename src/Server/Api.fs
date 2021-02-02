@@ -20,7 +20,7 @@
             match gameState with
             | Result.Ok gameModel ->
                 match gameModel with
-                | (InGame { Game = Game.GetGameId gameId }) ->
+                | GameModel.GotGameId gameId ->
                     let id = gameId |> GameId.extract
                     do! sendMessage hub channelPath id gameModel |>Async.AwaitTask
                 | _ ->

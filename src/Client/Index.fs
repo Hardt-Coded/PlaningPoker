@@ -109,6 +109,15 @@ let update (msg:Models.Msg) state =
             | _ ->
                 Cmd.none
         state, cmd
+
+    | GameMsg (EndGame) ->
+        let cmd =
+            match state.GameId, state.CurrentPlayer with
+            | Some gameId, Some player ->
+                Commands.endGame gameId player
+            | _ ->
+                Cmd.none
+        state, cmd
         
     | GameMsg (PlayCard card) ->
         let cmd =
@@ -136,11 +145,19 @@ let update (msg:Models.Msg) state =
     | SetCurrentGameState gameModel ->
         let gameId =
             match gameModel with
-            | InGame { Game = Game.GetGameId gameId } ->
-                Some gameId
-            | _ ->
-                None
-        { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.none
+            | GameModel.GotGameId gameId -> Some gameId
+            | _ -> None
+
+        match gameModel, state.CurrentPlayer with
+        | GameEnded gameId, _ -> // game was ended by admin
+            { state with CurrentGameState = gameModel; Error = ""; GameId = Some gameId }, Cmd.ofMsg DisconnectWebSocket
+        | GameModel.GotPlayers [], _ -> // no players left! go away
+            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.ofMsg DisconnectWebSocket
+        | GameModel.GotPlayers players, Some currentPlayer when players |> List.exists (fun p -> p = currentPlayer) |> not -> // if you arn't part of the game any more, go away!
+            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.ofMsg DisconnectWebSocket
+        | _ ->
+            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.none
+
     | SetCurrentPlayer player ->
         { state with CurrentPlayer = Some player }, Cmd.none
     | ConnectToWebSocket gameId ->
@@ -181,6 +198,36 @@ let update (msg:Models.Msg) state =
             | _ ->
                 Cmd.none
         state, cmd
+
+    | ReInit currentUrl ->
+        
+        let id =
+            match currentUrl with
+            | [] -> ""
+            | _ -> currentUrl.[0]
+
+        let newState = {
+            CurrentGameState = Start
+            GameId = None
+            CurrentPlayer = None
+            Name = ""
+            Error = ""
+            Theme = state.Theme
+            IsLoading = false
+            Id = id
+            WebSocket = None
+        }
+
+        let cmd =
+            if id <> "" then
+                Commands.resetWhenGameNotExists id
+            else
+                Cmd.none
+
+        if (id <> state.Id) then
+            newState, cmd
+        else
+            state, Cmd.none
         
 
 
@@ -200,7 +247,6 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
             prop.children [
               if state.IsLoading then
                 Mui.circularProgress [
-                  //circularProgress.classes.root classes.progressBar
                   circularProgress.color.secondary
                 ]
               else
@@ -229,7 +275,6 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
                     textField.id "name"
                     textField.label "Name"
                     textField.name "name"
-                    textField.autoComplete "name"
                     textField.autoFocus true
                   ]
 
@@ -345,7 +390,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
                 button.variant.contained
                 button.color.primary
                 button.classes.root classes.loginSubmit
-                button.children "Finish Round!"
+                button.children "Finish the Round! (before everyone has choosen!)"
                 button.disabled state.IsLoading
                 prop.onClick (fun e ->
                   dispatch (GameMsg FinishRound)
@@ -355,7 +400,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
         Mui.button [
             button.fullWidth true
             button.variant.contained
-            button.color.primary
+            button.color.secondary
             button.classes.root classes.loginSubmit
             button.children "End Game!!!"
             button.disabled state.IsLoading
@@ -391,7 +436,7 @@ let renderPlayerView (classes:CustomStyles) state player dispatch =
             button.variant.contained
             button.color.secondary
             button.classes.root classes.loginSubmit
-            button.children "Leave Game!"
+            button.children "Leave the Game!"
             button.disabled state.IsLoading
             prop.onClick (fun e ->
               dispatch (GameMsg <| LeaveGame player)
@@ -423,111 +468,270 @@ let renderDeck state inGameState dispatch =
                     grid.item true
                     grid.xs._1
                     
-                    let onClick =
+                    grid.children [
                         match inGameState.State with
                         | InRound ->
-                            (fun () -> dispatch (GameMsg (PlayCard (Card.create c))))
+                            let onClick = (fun () -> dispatch (GameMsg (PlayCard (Card.create c))))
+                            Elements.card 1.3 true onClick c
                         | _ ->
-                            fun () -> ()
-
-                    grid.children [
-                        Elements.card true onClick c 
+                            let onClick = fun () -> ()
+                            Elements.card 1.3 false onClick c
                     ]
-
+                    
+                        
                 ]
         ]
     ]
 
 
-let joinLink inGameState =
-    let (gameid, _) = Game.extract inGameState.Game
-    let linkAddress = $"{Browser.Dom.window.location.origin}/#{GameId.extract gameid}"
-    Mui.link [
-        prop.href linkAddress
-        link.variant "h6"
-        link.children "Join Link"
-        
+
+    
+let renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch =
+    let (_, pname) = Player.extract player
+    Mui.grid [
+        grid.item true
+        grid.xs._2
+        grid.children [
+            Mui.card [
+                card.classes.root classes.playerCard
+                card.children [
+                    Mui.typography [
+                        typography.align.center
+                        typography.variant.h4
+                        prop.text pname
+                    ]
+
+                    // Show Card
+                    match inGameState.PlayedCards |> List.tryFind (fun pc -> pc.Player = player) with
+                    | Some playedCard ->
+                        let isVisible = 
+                            match inGameState.State with
+                            | InRound
+                            | Beginning -> player = currentPlayer // only own card
+                            | DisplayResult -> true // all cards
+                        let cardValue = Card.extract playedCard.Card
+                        Elements.card 1.6 isVisible (fun() -> ()) cardValue
+                    | None ->
+                        Html.div [
+                            prop.style [
+                                style.height 149
+                            ]
+                        ]
+
+                    // Show Player Admin Panel
+                    if (isAdmin) then
+                        renderPlayerAdminView classes state player dispatch
+                ]
+            ]    
+        ]
+            
     ]
     
 
-let renderInGameView classes state inGameState dispatch =
-    Mui.container [
-        match state.CurrentPlayer with
-        | None  ->
-            Mui.typography "Somethings seems to not working here!"
-            ()
-        | Some currentPlayer ->
-            let (_,name) = Player.extract currentPlayer
-            let (gameId, admin) = Game.extract inGameState.Game
-            let isAdmin = admin = currentPlayer
 
-            Mui.typography [
-                typography.variant.h4
-                typography.children $"Welcome {name}!"
-            ]
-            if isAdmin then
-                Mui.typography [
-                    typography.variant.h6
-                    typography.children $"You are the Admin of this Game."
+let renderInGameView classes state inGameState currentPlayer dispatch =
+    Mui.container [
+        let (_,name) = Player.extract currentPlayer
+        let (gameId, admin) = Game.extract inGameState.Game
+        let isAdmin = admin = currentPlayer
+
+        Elements.loadingSpinner state.IsLoading
+        
+        let row1 = 
+            if inGameState.Players.Length <= 4 then
+                inGameState.Players
+            else
+                inGameState.Players.[0..3]
+        Mui.grid [
+            grid.container true
+            grid.spacing._1
+            grid.children [
+
+                Mui.grid [
+                    grid.item true
+                    grid.xs._2
                 ]
 
-            joinLink inGameState
-            
-            if isAdmin then
-                renderAdminView classes state inGameState dispatch
+                for player in row1 do
+                    renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
 
-            renderPlayerView classes state currentPlayer dispatch
+                Mui.grid [
+                    grid.item true
+                    grid.xs._2
+                ]
+                
+            ]
+        ]
+        
+        let row2 = 
+            if inGameState.Players.Length <= 6 then
+                inGameState.Players.[4..inGameState.Players.Length-1]
+            else
+                inGameState.Players.[4..5]
+        Mui.grid [
+            grid.container true
+            grid.spacing._1
+            grid.children [
+                if (row2.Length > 0) then 
+                    renderPlayerState classes state inGameState row2.[0] currentPlayer isAdmin dispatch
+                else 
+                    Mui.grid [
+                        grid.item true
+                        grid.xs._2
+                    ]
 
-            Elements.loadingSpinner state.IsLoading
+                Mui.grid [
+                    grid.item true
+                    grid.xs._8
+                    grid.classes.root classes.playerCard
+                    grid.children [
+                        match inGameState.State with
+                        | InRound ->
+                            Mui.typography [ 
+                                typography.variant.h4
+                                typography.align.center
+                                typography.children "Choose your Card!"
+                            ]
+                        | Beginning ->
+                            Mui.typography [ 
+                                typography.variant.h4
+                                typography.align.center
+                                typography.children "Prepare yourself, the Game is starting soon!"
+                            ]
+                        | DisplayResult ->
+                            Mui.typography [ 
+                                typography.variant.h4
+                                typography.align.center
+                                typography.children "Look, what we got here"
+                            ]
 
-            Mui.typography "Players"
-            Mui.grid [
-                grid.container true
-                grid.spacing._1
-                grid.children [
-                    for p in inGameState.Players do
-                        let (_, pname) = Player.extract p
-                        Mui.grid [
-                            grid.item true
-                            grid.xs._2
-                            grid.children [
-                                Mui.card [
-                                    card.classes.root classes.playerCard
-                                    card.children [
-                                        Mui.typography [
-                                            typography.align.center
-                                            typography.variant.h4
-                                            prop.text pname
-                                        ]
+                            Mui.table [
+                                Mui.tableHead [
+                                    Mui.tableCell "1"
+                                    Mui.tableCell "2"
+                                    Mui.tableCell "3"
+                                    Mui.tableCell "5"
+                                    Mui.tableCell "8"
+                                    Mui.tableCell "13"
+                                    Mui.tableCell "20"
+                                    Mui.tableCell "40"
+                                    Mui.tableCell "100"
+                                    Mui.tableCell "Stop"
+                                    Mui.tableCell "Coffee"
+                                    Mui.tableCell "WTF?"
+                                ]
+                                Mui.tableBody [
 
-                                        // Show Card
-                                        match inGameState.PlayedCards |> List.tryFind (fun pc -> pc.Player = p) with
-                                        | Some playedCard ->
-                                            let isVisible = 
-                                                match inGameState.State with
-                                                | InRound
-                                                | Beginning -> p = currentPlayer // only own card
-                                                | DisplayResult -> true // all cards
-                                            let cardValue = Card.extract playedCard.Card
-                                            Elements.card isVisible (fun() -> ()) cardValue
-                                        | None ->
-                                            ()
-
-                                        // Show Player Admin Panel
-                                        renderPlayerAdminView classes state p dispatch
+                                    let counts = [
+                                        state.CurrentGameState |> GameModel.countPlayeredCards One
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Two
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Three
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Five
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Eight
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Thirtheen
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Twenty
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Fourty
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Hundred
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Stop
+                                        state.CurrentGameState |> GameModel.countPlayeredCards Coffee
+                                        state.CurrentGameState |> GameModel.countPlayeredCards IDontKnow
                                     ]
-                                ]    
+
+                                    let maxCount = counts |> List.max
+
+
+                                    Mui.tableRow [
+                                        for count in counts do
+                                            match count with
+                                            | 0 ->
+                                                Mui.tableCell $"-"
+                                            | c when c = maxCount ->
+                                                Mui.tableCell [
+                                                    Mui.typography [
+                                                        typography.variant.h5
+                                                        typography.children $"{c}"
+                                                        typography.color.secondary
+                                                    ]
+                                                ]
+                                            | _ ->
+                                                Mui.tableCell $"{count}"
+                                                
+                                                
+                                            
+                                    ]
+                                ]
                             ]
                             
-                        ]
+                                
+                    ]
+                        
+                ]
 
-                        
-                        
-                    
+
+                if (row2.Length > 1) then
+                    renderPlayerState classes state inGameState row2.[1] currentPlayer isAdmin dispatch
+                else
+                    Mui.grid [
+                        grid.item true
+                        grid.xs._2
+                    ]
+            
                 ]
             ]
 
-            renderDeck state inGameState dispatch
+        let row3 =
+            if inGameState.Players.Length <= 10 then
+                inGameState.Players.[6..inGameState.Players.Length - 1]
+            else
+                inGameState.Players.[6..9]
+        Mui.grid [
+            grid.container true
+            grid.spacing._1
+            grid.children [
+
+                Mui.grid [
+                    grid.item true
+                    grid.xs._2
+                ]
+
+                for player in row3 do
+                    renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
+
+                Mui.grid [
+                    grid.item true
+                    grid.xs._2
+                ]
+                
+            ]
+        ]
+
+        if (inGameState.Players.Length > 10) then
+            let rest = 
+                inGameState.Players.[11..]
+                |> List.chunkBySize 6
+
+            for chucks in rest do
+
+                Mui.grid [
+                    grid.container true
+                    grid.spacing._1
+                    grid.children [
+
+                        for player in chucks do
+                            renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
+                    ]
+                ]
+
+
+        
+
+        renderDeck state inGameState dispatch
+
+        if not isAdmin then
+            renderPlayerView classes state currentPlayer dispatch
+
+        if isAdmin then
+            renderAdminView classes state inGameState dispatch
     ]
 
 
@@ -535,6 +739,7 @@ let view state dispatch =
     Browser.Dom.console.log ($"%A{state}")
     let classes = useStyles ()
     React.router [
+        router.onUrlChanged (ReInit >> dispatch)
         router.children [
             Mui.themeProvider [
                 themeProvider.theme (match state.Theme with | Dark -> Theme.dark | Light -> Theme.light)
@@ -557,11 +762,15 @@ let view state dispatch =
                                 prop.children [
                                     Html.div [ prop.className classes.toolbar ]
 
-                                    match state.CurrentGameState with
-                                    | Start ->
+                                    match state.CurrentGameState, state.CurrentPlayer with
+                                    | Start, _ ->
                                         renderStartView classes state dispatch
-                                    | InGame inGameState ->
-                                        renderInGameView classes state inGameState dispatch
+                                    | InGame inGameState, Some currentPlayer ->
+                                        renderInGameView classes state inGameState currentPlayer dispatch
+                                    | GameEnded _, _ ->
+                                        Mui.typography "Wait ... for the end ..."
+                                    | _ ->
+                                        Mui.typography "Somethings seems to not working here!"
 
 
                                     

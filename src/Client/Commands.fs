@@ -48,11 +48,12 @@ let createGame currentPlayer =
             | Ok state -> 
                 dispatch <| SetCurrentGameState state
                 match state with
-                | InGame { Game = Game.GetGameId gameId } ->
+                | GameModel.GotGameId gameId ->
                     dispatch <| SetCurrentPlayer currentPlayer
                     dispatch <| ConnectToWebSocket gameId
                     dispatch <| SetGameId gameId
                     dispatch <| SetCookies
+                    dispatch <| Navigate [ GameId.extract gameId ]
                 | _ ->
                     dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
             | Error e -> dispatch <| OnError e
@@ -74,6 +75,7 @@ let resetWhenGameNotExists id =
                 | Error e ->
                     Browser.Dom.console.log(e)
                     dispatch <| Reset
+                    dispatch <| Navigate []
             else
                 ()
 
@@ -93,7 +95,7 @@ let joinGameFromCookiesOrCheckGameExisits () =
                 | Ok state -> 
                     dispatch <| SetCurrentGameState state
                     match state with
-                    | InGame { Game = Game.GetGameId gameId } ->
+                    | GameModel.GotGameId gameId ->
                         dispatch <| SetCurrentPlayer currentPlayer
                         dispatch <| ConnectToWebSocket gameId
                         dispatch <| SetGameId gameId
@@ -120,7 +122,7 @@ let joinGame gameId currentPlayer =
             | Ok state -> 
                 dispatch <| SetCurrentGameState state
                 match state with
-                | InGame { Game = Game.GetGameId gameId } ->
+                | GameModel.GotGameId gameId ->
                     dispatch <| SetCurrentPlayer currentPlayer
                     dispatch <| ConnectToWebSocket gameId
                     dispatch <| SetGameId gameId

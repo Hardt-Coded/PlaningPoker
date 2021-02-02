@@ -73,11 +73,11 @@ module Domain =
         let extract (Game (id, admin)) = id, admin
 
 
-        let (|GetGameAdmin|_|) game =
+        let internal (|GetGameAdmin|_|) game =
             let (_, admin) = extract game
             Some admin
 
-        let (|GetGameId|_|) game =
+        let internal (|GetGameId|_|) game =
             let (id, _) = extract game
             Some id
 
@@ -88,6 +88,9 @@ module Domain =
         | Beginning
         | InRound
         | DisplayResult
+
+
+    
 
 
 
@@ -108,6 +111,46 @@ module Domain =
     type GameModel =
         | Start
         | InGame of InGameModel
+        | GameEnded of GameId
+
+
+    module GameModel =
+
+        let (|GotGameAdmin|_|) gameModel = 
+            match gameModel with
+            | (InGame { Game = Game.GetGameAdmin admin }) ->
+                Some admin
+            | _ ->
+                None
+
+
+        let (|GotGameId|_|) gameModel = 
+            match gameModel with
+            | (InGame { Game = Game.GetGameId gameId }) ->
+                Some gameId
+            | GameEnded gameId ->
+                Some gameId
+            | _ ->
+                None
+
+
+        let (|GotPlayers|_|) gameModel =
+            match gameModel with
+            | (InGame { Players = players }) -> Some players
+            | _ -> None
+
+
+        let countPlayeredCards cardValue gameModel  =
+            match gameModel with
+            | InGame { PlayedCards = playedCard } ->
+                playedCard
+                |> List.filter (fun pc -> (pc.Card |> Card.extract) = cardValue)
+                |> List.length
+            | _ ->
+                0
+
+
+
 
 
     type Msg =
