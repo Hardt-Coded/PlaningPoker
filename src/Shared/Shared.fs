@@ -109,7 +109,6 @@ module Domain =
 
 
     type GameModel =
-        | Start
         | InGame of InGameModel
         | GameEnded of GameId
 
@@ -141,13 +140,13 @@ module Domain =
 
 
         let countPlayeredCards cardValue gameModel  =
-            match gameModel with
-            | InGame { PlayedCards = playedCard } ->
-                playedCard
-                |> List.filter (fun pc -> (pc.Card |> Card.extract) = cardValue)
-                |> List.length
-            | _ ->
-                0
+            //match gameModel with
+            //| InGame { PlayedCards = playedCard } ->
+            gameModel.PlayedCards
+            |> List.filter (fun pc -> (pc.Card |> Card.extract) = cardValue)
+            |> List.length
+            //| _ ->
+            //    0
 
 
 

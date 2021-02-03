@@ -1,243 +1,16 @@
-module Index
+module View
 
-open Elmish
-open Fable.Remoting.Client
-open Shared.Api
-open Shared
 open Shared.Domain
 open Models
 open Feliz.MaterialUI
 open Feliz.Router
-open Fable.SimpleJson
-        
-
-
-let init isDarkMode =
-    let currentUrl = Router.currentUrl ()
-    let id =
-        match currentUrl with
-        | [] -> ""
-        | _ -> currentUrl.[0]
-
-    let state = {
-        CurrentGameState = Start
-        GameId = None
-        CurrentPlayer = None
-        Name = ""
-        Error = ""
-        Theme = if isDarkMode then Dark else Light
-        IsLoading = false
-        Id = id
-        WebSocket = None
-    }
-    
-    let gameId = Cookies.getGameId ()
-
-    let cmd =
-        if id <> "" && gameId <> Some (GameId.create id) then
-            Commands.resetWhenGameNotExists id
-        else
-            Commands.joinGameFromCookiesOrCheckGameExisits ()
-
-    state, cmd
-
-
-let update (msg:Models.Msg) state =
-    Browser.Dom.console.log ($"%A{msg}")
-    match msg with
-    | Reset ->
-        Browser.Dom.console.log("reseting State")
-        
-        let currentTheme = state.Theme
-        { 
-            CurrentGameState = Start
-            GameId = None
-            CurrentPlayer = None
-            Name = ""
-            Error = ""
-            IsLoading = false
-            Id = ""
-            Theme = currentTheme
-            WebSocket = None
-        }, Cmd.batch [ Commands.removeCookies (); Cmd.ofMsg (Navigate [ "" ])]
-    | CreateGame ->
-        if (state.Name = "") then
-            state, Cmd.ofMsg <| OnError "Name is empty!"
-        else
-            let player = Player.create state.Name
-            state, Commands.createGame player
-
-    | JoinGame ->
-        if (state.Id = "") then
-            state, Cmd.ofMsg <| OnError "Id is empty!"
-        elif (state.Name = "") then
-            state, Cmd.ofMsg <| OnError "Name is empty!"
-        else
-            let player = Player.create state.Name
-            let gameId = GameId.create state.Id
-            state, Commands.joinGame gameId player
-
-
-    | GameMsg (StartRound) ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                Commands.startRound gameId player
-            | _ ->
-                Cmd.none
-        state, cmd
-
-    | GameMsg (FinishRound) ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                Commands.finishRound gameId player
-            | _ ->
-                Cmd.none
-        state, cmd
-        
-    | GameMsg (LeaveGame playerToLeave) ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                let cmds = [
-                    Commands.leaveGame gameId player playerToLeave
-                    if (player = playerToLeave) then
-                        Cmd.ofMsg DisconnectWebSocket
-                ]
-                Cmd.batch cmds
-            | _ ->
-                Cmd.none
-        state, cmd
-
-    | GameMsg (EndGame) ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                Commands.endGame gameId player
-            | _ ->
-                Cmd.none
-        state, cmd
-        
-    | GameMsg (PlayCard card) ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                Commands.playCard gameId player card
-            | _ ->
-                Cmd.none
-        state, cmd
-        
-    | GameMsg _ ->
-        state, Cmd.none
-    | ChangeName name ->
-        { state with Name = name }, Cmd.none
-    | ChangeId id ->
-        { state with Id = id }, Cmd.none
-    | SetGameId gameId ->
-        { state with GameId = Some gameId }, Cmd.none
-    | LoadState ->
-        match state.GameId with
-        | None ->
-            state, Cmd.none
-        | Some gameId ->
-            state, Commands.loadState gameId
-    | SetCurrentGameState gameModel ->
-        let gameId =
-            match gameModel with
-            | GameModel.GotGameId gameId -> Some gameId
-            | _ -> None
-
-        match gameModel, state.CurrentPlayer with
-        | GameEnded gameId, _ -> // game was ended by admin
-            { state with CurrentGameState = gameModel; Error = ""; GameId = Some gameId }, Cmd.ofMsg DisconnectWebSocket
-        | GameModel.GotPlayers [], _ -> // no players left! go away
-            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.ofMsg DisconnectWebSocket
-        | GameModel.GotPlayers players, Some currentPlayer when players |> List.exists (fun p -> p = currentPlayer) |> not -> // if you arn't part of the game any more, go away!
-            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.ofMsg DisconnectWebSocket
-        | _ ->
-            { state with CurrentGameState = gameModel; Error = ""; GameId = gameId }, Cmd.none
-
-    | SetCurrentPlayer player ->
-        { state with CurrentPlayer = Some player }, Cmd.none
-    | ConnectToWebSocket gameId ->
-        state, Commands.WebSocket.connectWebSocketCmd gameId
-    | SetWebSocketHandler ws ->
-        { state with WebSocket = Some ws },Cmd.none
-    | DisconnectWebSocket ->
-        let cmd = 
-            match state.WebSocket with
-            | None ->
-                Cmd.none
-            | Some ws ->
-                Commands.WebSocket.disconnectWebsocket ws
-        state,cmd
-    | OnError error ->
-        { state with Error = error }, Cmd.none
-    | ClearError ->
-        { state with Error = "" }, Cmd.none
-    | ToggleTheme ->
-        let newTheme = 
-            match state.Theme with
-            | Dark -> Light
-            | Light -> Dark
-        { state with Theme = newTheme }, Cmd.none
-    | IsLoading b ->
-        { state with IsLoading = b }, Cmd.none
-    | Navigate segments ->
-        match segments with
-        | [ id ] ->
-            state, Cmd.ofSub (fun _ -> Router.navigate (segments,[]))
-        | _ ->
-            state, Cmd.none
-    | SetCookies ->
-        let cmd =
-            match state.GameId, state.CurrentPlayer with
-            | Some gameId, Some player ->
-                Commands.setCookies gameId player
-            | _ ->
-                Cmd.none
-        state, cmd
-
-    | ReInit currentUrl ->
-        
-        let id =
-            match currentUrl with
-            | [] -> ""
-            | _ -> currentUrl.[0]
-
-        let newState = {
-            CurrentGameState = Start
-            GameId = None
-            CurrentPlayer = None
-            Name = ""
-            Error = ""
-            Theme = state.Theme
-            IsLoading = false
-            Id = id
-            WebSocket = None
-        }
-
-        let cmd =
-            if id <> "" then
-                Commands.resetWhenGameNotExists id
-            else
-                Cmd.none
-
-        if (id <> state.Id) then
-            newState, cmd
-        else
-            state, Cmd.none
-        
-
-
 open Feliz
 open Styling
 
 
 open Fable.MaterialUI.Icons
 
-let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (onTextChange: string -> unit) (onClick:unit -> unit) state  =
+let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (onTextChange: string -> unit) (onClick:unit -> unit) isLoading (name:string)  =
     Mui.container [
         container.component' "main"
         container.maxWidth.xs
@@ -245,7 +18,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
           Mui.paper [
             paper.classes.root classes.loginPaper
             prop.children [
-              if state.IsLoading then
+              if isLoading then
                 Mui.circularProgress [
                   circularProgress.color.secondary
                 ]
@@ -266,7 +39,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
                 prop.className classes.loginForm
                 prop.children [
                   Mui.textField [
-                    textField.value state.Name
+                    textField.value name
                     textField.onChange onTextChange
                     textField.variant.outlined
                     textField.margin.normal
@@ -285,7 +58,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
                     button.color.primary
                     button.classes.root classes.loginSubmit
                     button.children buttonText
-                    button.disabled state.IsLoading
+                    button.disabled isLoading
                     prop.onClick (fun e ->
                       e.preventDefault ()
                       onClick()
@@ -301,7 +74,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
 
 
 
-let renderCreateGameView (classes:CustomStyles) state dispatch =
+let renderCreateGameView (classes:CustomStyles) isLoading name dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
@@ -312,12 +85,13 @@ let renderCreateGameView (classes:CustomStyles) state dispatch =
                 "Create Game!"
                 (ChangeName>>dispatch)
                 (fun () -> dispatch CreateGame)
-                state
+                isLoading
+                name
         ]
     ]
 
 
-let renderJoinGameView (classes:CustomStyles) state dispatch =
+let renderJoinGameView (classes:CustomStyles) isLoading name dispatch =
     Mui.grid [
         grid.container true
         grid.spacing._2
@@ -328,7 +102,8 @@ let renderJoinGameView (classes:CustomStyles) state dispatch =
                 "Join Game!"
                 (ChangeName>>dispatch)
                 (fun () -> dispatch JoinGame)
-                state
+                isLoading
+                name
         ]
     ]
 
@@ -354,10 +129,13 @@ let renderStartView (classes:CustomStyles) state dispatch =
             ]
         ]
 
-        if (state.Id = "") then
-            renderCreateGameView classes state dispatch
-        else
-            renderJoinGameView classes state dispatch
+        match state.View with
+        | CreateGameView viewState ->
+            renderCreateGameView classes state.IsLoading viewState.Name dispatch
+        | JoinGameView viewState ->
+            renderJoinGameView classes state.IsLoading viewState.Name dispatch
+        | _ ->
+            ()
 
 
     ]
@@ -365,7 +143,7 @@ let renderStartView (classes:CustomStyles) state dispatch =
 
 
 
-let renderAdminView (classes:CustomStyles) state inGameState dispatch =
+let renderAdminView (classes:CustomStyles) isLoading inGameState dispatch =
     Html.div [
         match inGameState.State with
         | Beginning
@@ -377,7 +155,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
                 button.color.primary
                 button.classes.root classes.loginSubmit
                 button.children "Start Round!"
-                button.disabled state.IsLoading
+                button.disabled isLoading
                 prop.onClick (fun e ->
                   e.preventDefault ()
                   dispatch (GameMsg StartRound)
@@ -391,7 +169,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
                 button.color.primary
                 button.classes.root classes.loginSubmit
                 button.children "Finish the Round! (before everyone has choosen!)"
-                button.disabled state.IsLoading
+                button.disabled isLoading
                 prop.onClick (fun e ->
                   dispatch (GameMsg FinishRound)
                 )
@@ -403,7 +181,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
             button.color.secondary
             button.classes.root classes.loginSubmit
             button.children "End Game!!!"
-            button.disabled state.IsLoading
+            button.disabled isLoading
             prop.onClick (fun e ->
               dispatch (GameMsg EndGame)
             )
@@ -412,7 +190,7 @@ let renderAdminView (classes:CustomStyles) state inGameState dispatch =
     ]
 
 
-let renderPlayerAdminView (classes:CustomStyles) state player dispatch =
+let renderPlayerAdminView (classes:CustomStyles) isLoading player dispatch =
     Html.div [
         Mui.button [
             button.fullWidth true
@@ -420,7 +198,7 @@ let renderPlayerAdminView (classes:CustomStyles) state player dispatch =
             button.color.primary
             button.classes.root classes.loginSubmit
             button.children "Remove Player!"
-            button.disabled state.IsLoading
+            button.disabled isLoading
             prop.onClick (fun e ->
               e.preventDefault ()
               dispatch (GameMsg <| LeaveGame player)
@@ -429,7 +207,7 @@ let renderPlayerAdminView (classes:CustomStyles) state player dispatch =
     ]
 
 
-let renderPlayerView (classes:CustomStyles) state player dispatch =
+let renderPlayerView (classes:CustomStyles) isLoading player dispatch =
     Html.div [
         Mui.button [
             button.fullWidth true
@@ -437,14 +215,14 @@ let renderPlayerView (classes:CustomStyles) state player dispatch =
             button.color.secondary
             button.classes.root classes.loginSubmit
             button.children "Leave the Game!"
-            button.disabled state.IsLoading
+            button.disabled isLoading
             prop.onClick (fun e ->
               dispatch (GameMsg <| LeaveGame player)
             )
         ]
     ]
 
-let renderDeck state inGameState dispatch =
+let renderDeck inGameState dispatch =
     let cards = [
         One
         Two
@@ -486,7 +264,7 @@ let renderDeck state inGameState dispatch =
 
 
     
-let renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch =
+let renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch =
     let (_, pname) = Player.extract player
     Mui.grid [
         grid.item true
@@ -520,7 +298,7 @@ let renderPlayerState classes state inGameState player currentPlayer isAdmin dis
 
                     // Show Player Admin Panel
                     if (isAdmin) then
-                        renderPlayerAdminView classes state player dispatch
+                        renderPlayerAdminView classes isLoading player dispatch
                 ]
             ]    
         ]
@@ -529,13 +307,13 @@ let renderPlayerState classes state inGameState player currentPlayer isAdmin dis
     
 
 
-let renderInGameView classes state inGameState currentPlayer dispatch =
+let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch =
     Mui.container [
         let (_,name) = Player.extract currentPlayer
         let (gameId, admin) = Game.extract inGameState.Game
         let isAdmin = admin = currentPlayer
 
-        Elements.loadingSpinner state.IsLoading
+        Elements.loadingSpinner isLoading
         
         let row1 = 
             if inGameState.Players.Length <= 4 then
@@ -553,7 +331,7 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
                 ]
 
                 for player in row1 do
-                    renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
+                    renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
 
                 Mui.grid [
                     grid.item true
@@ -573,7 +351,7 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
             grid.spacing._1
             grid.children [
                 if (row2.Length > 0) then 
-                    renderPlayerState classes state inGameState row2.[0] currentPlayer isAdmin dispatch
+                    renderPlayerState classes isLoading inGameState row2.[0] currentPlayer isAdmin dispatch
                 else 
                     Mui.grid [
                         grid.item true
@@ -623,18 +401,18 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
                                 Mui.tableBody [
 
                                     let counts = [
-                                        state.CurrentGameState |> GameModel.countPlayeredCards One
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Two
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Three
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Five
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Eight
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Thirtheen
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Twenty
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Fourty
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Hundred
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Stop
-                                        state.CurrentGameState |> GameModel.countPlayeredCards Coffee
-                                        state.CurrentGameState |> GameModel.countPlayeredCards IDontKnow
+                                        inGameState |> GameModel.countPlayeredCards One
+                                        inGameState |> GameModel.countPlayeredCards Two
+                                        inGameState |> GameModel.countPlayeredCards Three
+                                        inGameState |> GameModel.countPlayeredCards Five
+                                        inGameState |> GameModel.countPlayeredCards Eight
+                                        inGameState |> GameModel.countPlayeredCards Thirtheen
+                                        inGameState |> GameModel.countPlayeredCards Twenty
+                                        inGameState |> GameModel.countPlayeredCards Fourty
+                                        inGameState |> GameModel.countPlayeredCards Hundred
+                                        inGameState |> GameModel.countPlayeredCards Stop
+                                        inGameState |> GameModel.countPlayeredCards Coffee
+                                        inGameState |> GameModel.countPlayeredCards IDontKnow
                                     ]
 
                                     let maxCount = counts |> List.max
@@ -669,7 +447,7 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
 
 
                 if (row2.Length > 1) then
-                    renderPlayerState classes state inGameState row2.[1] currentPlayer isAdmin dispatch
+                    renderPlayerState classes isLoading inGameState row2.[1] currentPlayer isAdmin dispatch
                 else
                     Mui.grid [
                         grid.item true
@@ -695,7 +473,7 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
                 ]
 
                 for player in row3 do
-                    renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
+                    renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
 
                 Mui.grid [
                     grid.item true
@@ -718,20 +496,20 @@ let renderInGameView classes state inGameState currentPlayer dispatch =
                     grid.children [
 
                         for player in chucks do
-                            renderPlayerState classes state inGameState player currentPlayer isAdmin dispatch
+                            renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
                     ]
                 ]
 
 
         
 
-        renderDeck state inGameState dispatch
+        renderDeck inGameState dispatch
 
         if not isAdmin then
-            renderPlayerView classes state currentPlayer dispatch
+            renderPlayerView classes isLoading currentPlayer dispatch
 
         if isAdmin then
-            renderAdminView classes state inGameState dispatch
+            renderAdminView classes isLoading inGameState dispatch
     ]
 
 
@@ -739,7 +517,7 @@ let view state dispatch =
     Browser.Dom.console.log ($"%A{state}")
     let classes = useStyles ()
     React.router [
-        router.onUrlChanged (ReInit >> dispatch)
+        router.onUrlChanged (UrlChanged >> dispatch)
         router.children [
             Mui.themeProvider [
                 themeProvider.theme (match state.Theme with | Dark -> Theme.dark | Light -> Theme.light)
@@ -753,7 +531,12 @@ let view state dispatch =
                                 appBar.classes.root classes.appBar
                                 appBar.position.fixed'
                                 appBar.children [
-                                    Elements.toolbar state dispatch
+                                    match state.View with
+                                    | JoinGameView _
+                                    | CreateGameView _ ->
+                                        Elements.toolbar state.Theme None None dispatch
+                                    | InGameView { CurrentGameState = (InGame inGameState); CurrentPlayer= player; GameId = gameId; } ->
+                                        Elements.toolbar state.Theme (Some player) (Some gameId) dispatch
                                 ]
                             ]
                             
@@ -762,18 +545,15 @@ let view state dispatch =
                                 prop.children [
                                     Html.div [ prop.className classes.toolbar ]
 
-                                    match state.CurrentGameState, state.CurrentPlayer with
-                                    | Start, _ ->
+
+                                    match state.View with
+                                    | JoinGameView _
+                                    | CreateGameView _ ->
                                         renderStartView classes state dispatch
-                                    | InGame inGameState, Some currentPlayer ->
-                                        renderInGameView classes state inGameState currentPlayer dispatch
-                                    | GameEnded _, _ ->
-                                        Mui.typography "Wait ... for the end ..."
+                                    | InGameView { CurrentGameState = (InGame inGameState); CurrentPlayer= player; GameId = gameId; } ->
+                                        renderInGameView classes state.IsLoading player gameId inGameState dispatch
                                     | _ ->
-                                        Mui.typography "Somethings seems to not working here!"
-
-
-                                    
+                                        Mui.typography "Wait ... for the end ..."
 
                                     Dialog.AlertDialog (state.Error<>"") (fun () -> dispatch ClearError) "Error" state.Error
 

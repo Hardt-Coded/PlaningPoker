@@ -14,19 +14,20 @@
     <Content Include="public\style.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="public\app.5e0c2891a78c47eec877.js">
+    <None Include="public\app.6c1addc29ba1b159f565.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="public\app.5e0c2891a78c47eec877.js.map" />
+    <None Include="public\app.6c1addc29ba1b159f565.js.map" />
     <None Include="public\style.css.map" />
-    <None Include="public\vendors.5e0c2891a78c47eec877.js">
+    <None Include="public\vendors.6c1addc29ba1b159f565.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="public\vendors.5e0c2891a78c47eec877.js.map" />
+    <None Include="public\vendors.6c1addc29ba1b159f565.js.map" />
     <Compile Include="Domain.fs" />
     <Compile Include="Api.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
@@ -36,5 +37,4 @@
     <PackageReference Include="Saturn" Version="0.14.1" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup />
 </Project>

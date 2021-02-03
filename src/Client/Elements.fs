@@ -18,10 +18,10 @@ let joinLink (gameid:GameId) =
     ]
 
 
-let toolbar state dispatch =
+let toolbar theme currentPlayer (gameId:GameId option) dispatch =
     let c = useStyles ()
     let welcomeText =
-        match state.CurrentPlayer with
+        match currentPlayer with
         | None ->
             ""
         | Some player ->
@@ -36,11 +36,11 @@ let toolbar state dispatch =
             typography.classes.root c.appBarTitle 
         ]
 
-        match state.CurrentGameState with
-        | GameModel.GotGameId gameId ->
+        match gameId with
+        | None -> ()
+        | Some gameId ->
             joinLink gameId
-        | _ ->
-            ()
+        
         
 
         
@@ -48,7 +48,7 @@ let toolbar state dispatch =
         //Light/dark mode button
         Mui.tooltip [ 
             tooltip.title (
-                match state.Theme with
+                match theme with
                 | Light -> "Using light theme"
                 | Dark -> "Using dark theme"
             )
@@ -57,7 +57,7 @@ let toolbar state dispatch =
                     prop.onClick (fun _ -> dispatch ToggleTheme)
                     iconButton.color.inherit'
                     iconButton.children [ 
-                        match state.Theme with
+                        match theme with
                         | Light -> brightness7Icon []
                         | Dark -> brightness4Icon [] 
                     ] 

@@ -46,14 +46,9 @@ let createGame currentPlayer =
             let! state = pokerApi.createGame currentPlayer
             match state with
             | Ok state -> 
-                dispatch <| SetCurrentGameState state
                 match state with
                 | GameModel.GotGameId gameId ->
-                    dispatch <| SetCurrentPlayer currentPlayer
-                    dispatch <| ConnectToWebSocket gameId
-                    dispatch <| SetGameId gameId
-                    dispatch <| SetCookies
-                    dispatch <| Navigate [ GameId.extract gameId ]
+                    dispatch <| GameCreated (currentPlayer, gameId, state)
                 | _ ->
                     dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
             | Error e -> dispatch <| OnError e
@@ -93,14 +88,9 @@ let joinGameFromCookiesOrCheckGameExisits () =
                 let! state = pokerApi.joinGame gameId currentPlayer
                 match state with
                 | Ok state -> 
-                    dispatch <| SetCurrentGameState state
                     match state with
                     | GameModel.GotGameId gameId ->
-                        dispatch <| SetCurrentPlayer currentPlayer
-                        dispatch <| ConnectToWebSocket gameId
-                        dispatch <| SetGameId gameId
-                        dispatch <| SetCookies
-                        dispatch <| Navigate [ GameId.extract gameId ]
+                        dispatch <| GameJoined (currentPlayer, gameId, state)
                     | _ ->
                         dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
                 | Error e ->
@@ -120,14 +110,9 @@ let joinGame gameId currentPlayer =
             let! state = pokerApi.joinGame gameId currentPlayer
             match state with
             | Ok state -> 
-                dispatch <| SetCurrentGameState state
                 match state with
                 | GameModel.GotGameId gameId ->
-                    dispatch <| SetCurrentPlayer currentPlayer
-                    dispatch <| ConnectToWebSocket gameId
-                    dispatch <| SetGameId gameId
-                    dispatch <| SetCookies
-                    dispatch <| Navigate [ GameId.extract gameId ]
+                    dispatch <| GameJoined (currentPlayer, gameId, state)
                 | _ ->
                     dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
             | Error e -> dispatch <| OnError e
@@ -192,7 +177,8 @@ module WebSocket =
 
             let rec connect ws : WebSocket =
                 let host = Browser.Dom.window.location.host
-                let url = sprintf "ws://%s/socket/poker" host
+                let pref = if Browser.Dom.window.location.protocol = "https:" then "wss" else "ws"
+                let url = $"{pref}://{host}/socket/poker"
                 let ws =
                     match ws with
                     | None ->
@@ -223,6 +209,6 @@ module WebSocket =
 
     let disconnectWebsocket (ws:WebSocket) =
         fun dispatch ->
-            ws.onclose <- (fun _ -> dispatch Reset)
+            ws.onclose <- (fun _ -> dispatch WebSocketDisconnected)
             ws.close()
         |> Cmd.ofSub

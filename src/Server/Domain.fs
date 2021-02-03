@@ -19,9 +19,10 @@
             state |> joinGame player
         
         | Some currentPlayer, InGame state, LeaveGame player ->
-            let (_, admin) = state.Game |> Game.extract
+            let (id, admin) = state.Game |> Game.extract
             if currentPlayer = admin || currentPlayer = player then
                 state |> leaveGame player
+                
             else
                 $"Only the player itself or the admin can remove someone from the game!" |> Error
 
@@ -77,7 +78,17 @@
             state with
                 Players = state.Players |> List.filter (fun p -> p <> player)
         }
-        InGame newState |> Ok
+        // When all players left the game, we end it
+        let (gameId, admin) = Game.extract newState.Game
+        match newState.Players, (admin = player) with
+        | [], _ ->
+            GameEnded gameId |> Ok
+        | _, true ->
+            // game ended, when admin left the game
+            GameEnded gameId |> Ok
+        | _, false ->
+            InGame newState |> Ok
+        
 
 
     and playCard player card state =

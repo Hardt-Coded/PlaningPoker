@@ -12,14 +12,14 @@ let PlaningPoker () =
     let isDarkMode = true
     let state, dispatch = 
         React.useElmish(
-            Index.init isDarkMode,
-            Index.update,
+            Update.init isDarkMode,
+            Update.update,
             [| isDarkMode |> unbox |]
 
         )
 
-    Index.view state dispatch
-    //Html.h1 "Test"
+    View.view state dispatch
+    
 
 
 

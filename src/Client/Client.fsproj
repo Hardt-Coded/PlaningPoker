@@ -13,7 +13,8 @@
         <Compile Include="Elements.fs" />
         <Compile Include="Dialog.fs" />
         <Compile Include="Commands.fs" />
-        <Compile Include="Index.fs" />
+        <Compile Include="Update.fs" />
+        <Compile Include="View.fs" />
         <Compile Include="App.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>
