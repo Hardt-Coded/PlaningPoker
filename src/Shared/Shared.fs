@@ -109,6 +109,7 @@ module Domain =
 
 
     type GameModel =
+        | Init
         | InGame of InGameModel
         | GameEnded of GameId
 

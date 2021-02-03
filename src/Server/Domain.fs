@@ -5,7 +5,7 @@
     let rec private update currentPlayer msg state =
         match currentPlayer, state, msg with
         // ############# START ####################
-        | _, Start, CreateGame admin ->
+        | _, Init, CreateGame admin ->
             createGame admin
 
         | Some currentPlayer, InGame state, EndGame ->
@@ -126,12 +126,37 @@
         | GetState of game:GameId * AsyncReplyChannel<Result<GameModel,string>>
 
 
-    type GameEngine() =
+    type GameEngine(log:string->unit) =
     
 
         let getState gameId states =
             states |> List.tryFind (fun (gid,_) -> gid = gameId)
 
+
+        let removeGamestate currentGame gameStates =
+            gameStates
+            |> List.filter (fun (g,s) ->g <> currentGame)
+
+
+        let updateGamestate currentGame newState gameStates =
+            gameStates 
+            |> List.map (fun (g,s) ->
+                if g = currentGame then
+                    (g, newState)
+                else
+                    (g,s)
+            )
+
+        let addGamestate newGame gameStates =
+            newGame::gameStates 
+
+
+        let getLogString (gameStates:(GameId * GameModel) list) =
+            let join (sep:string) (sl:string array) = System.String.Join (sep,sl)
+            gameStates
+            |> List.map (fun (g,_) -> $"%A{g}")
+            |> List.toArray
+            |> join "\r\n"
 
         let mailBox = 
             MailboxProcessor<GameEngineMsg>.Start(
@@ -168,7 +193,7 @@
                                         replyChannel.Reply ($"You started already started a game with the id '{gameId}'" |> Error)
                                         return! loop gameStates
                                     | None ->
-                                        let initState = Start
+                                        let initState = Init
                                         let stateResult = update player msg initState
                                         replyChannel.Reply stateResult
 
@@ -176,7 +201,9 @@
                                         | Ok newState ->
                                             match newState with
                                             | GameModel.GotGameId gameId ->
-                                                let newGameStates = (gameId, newState)::gameStates
+                                                let newGameStates = gameStates |> addGamestate (gameId, newState)
+                                                log ($"game added: %A{gameId}")
+                                                log ($"games: {getLogString newGameStates}")
                                                 return! loop newGameStates
 
                                             | _ ->
@@ -200,19 +227,16 @@
                                         match stateResult with
                                         | Ok (GameEnded _) ->
                                             let newGameStates = 
-                                                gameStates 
-                                                |> List.filter (fun (g,s) ->g <> currentGame)
+                                                gameStates |> removeGamestate currentGame
+                                            log ($"game removed: %A{currentGame}")
+                                            log ($"games: {getLogString newGameStates}")
+
                                             return! loop newGameStates
 
                                         | Ok newState ->
                                             let newGameStates = 
-                                                gameStates 
-                                                |> List.map (fun (g,s) ->
-                                                    if g = currentGame then
-                                                        (g, newState)
-                                                    else
-                                                        (g,s)
-                                                )
+                                                gameStates |> updateGamestate currentGame newState
+                                                
                                             return! loop newGameStates
                                         | Error e ->
                                             return! loop gameStates

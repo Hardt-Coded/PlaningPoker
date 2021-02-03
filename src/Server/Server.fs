@@ -12,6 +12,9 @@ open Microsoft.AspNetCore.Http
 open Shared.Api
 open FSharp.Control.Tasks.V2
 open Saturn.Channels
+open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Configuration
+open System
 
 
 let [<Literal>]WebSocketChannelPath = "/socket/poker"
@@ -38,11 +41,23 @@ let channel =
             }
         )
     }
-    
 
+let configAi (builder:ILoggingBuilder) =
+    builder.SetMinimumLevel(LogLevel.Information) |> ignore
+    builder.AddApplicationInsights() |> ignore
+    builder.AddConsole() |> ignore
 
 let configureServices (services: IServiceCollection) =
-    services.AddSingleton<GameEngine,GameEngine>()
+    services.AddApplicationInsightsTelemetry() |> ignore
+    
+    let gameEngineFactory (sp:IServiceProvider) =
+        let logger = sp.GetService<ILogger<GameEngine>>()
+        let log (str:string) = 
+            logger.LogInformation(str)
+
+        GameEngine(log)
+
+    services.AddSingleton<GameEngine>(gameEngineFactory)
 
 
 let app =
@@ -54,6 +69,7 @@ let app =
         use_json_serializer (Thoth.Json.Giraffe.ThothSerializer())
         use_gzip
         service_config configureServices
+        logging configAi
         add_channel WebSocketChannelPath channel
     }
 

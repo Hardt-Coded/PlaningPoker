@@ -27,13 +27,13 @@
     <Compile Include="Api.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <ItemGroup />
-  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Remoting.Giraffe" Version="4.15.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.16.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
     <PackageReference Include="Saturn" Version="0.14.1" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
   </ItemGroup>
