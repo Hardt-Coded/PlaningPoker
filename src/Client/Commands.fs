@@ -18,13 +18,17 @@ let private sendCommandWithSucceed f succeedDispatch =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
-
-            let! state = f()
-            match state with
-            | Ok state -> 
-                dispatch <| SetCurrentGameState state
-                succeedDispatch dispatch
-            | Error e -> dispatch <| OnError e
+            try
+                let! state = f()
+            
+                match state with
+                | Ok state -> 
+                    dispatch <| SetCurrentGameState state
+                    succeedDispatch dispatch
+                | Error e -> dispatch <| OnError e
+            with
+            | ex ->
+                dispatch <| OnError ex.Message
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
@@ -43,15 +47,19 @@ let createGame currentPlayer =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
-            let! state = pokerApi.createGame currentPlayer
-            match state with
-            | Ok state -> 
+            try
+                let! state = pokerApi.createGame currentPlayer
                 match state with
-                | GameModel.GotGameId gameId ->
-                    dispatch <| GameCreated (currentPlayer, gameId, state)
-                | _ ->
-                    dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
-            | Error e -> dispatch <| OnError e
+                | Ok state -> 
+                    match state with
+                    | GameModel.GotGameId gameId ->
+                        dispatch <| GameCreated (currentPlayer, gameId, state)
+                    | _ ->
+                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
+                | Error e -> dispatch <| OnError e
+            with
+            | ex ->
+                dispatch <| OnError ex.Message
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
@@ -63,14 +71,18 @@ let resetWhenGameNotExists id =
         async {
             dispatch <| IsLoading true
             if id <> "" then
-                let! state = pokerApi.getState (GameId.create id)
-                match state with
-                | Ok _ ->
-                    ()
-                | Error e ->
-                    Browser.Dom.console.log(e)
-                    dispatch <| Reset
-                    dispatch <| Navigate []
+                try
+                    let! state = pokerApi.getState (GameId.create id)
+                    match state with
+                    | Ok _ ->
+                        ()
+                    | Error e ->
+                        Browser.Dom.console.log(e)
+                        dispatch <| Reset
+                        dispatch <| Navigate []
+                with
+                | ex ->
+                    dispatch <| OnError ex.Message
             else
                 ()
 
@@ -85,17 +97,23 @@ let joinGameFromCookiesOrCheckGameExisits () =
             dispatch <| IsLoading true
             match Cookies.getCurrentPlayer(), Cookies.getGameId() with
             | Some currentPlayer, Some gameId ->
-                let! state = pokerApi.joinGame gameId currentPlayer
-                match state with
-                | Ok state -> 
+
+                try
+                    let! state = pokerApi.joinGame gameId currentPlayer
                     match state with
-                    | GameModel.GotGameId gameId ->
-                        dispatch <| GameJoined (currentPlayer, gameId, state)
-                    | _ ->
-                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
-                | Error e ->
-                    Browser.Dom.console.log(e)
-                    dispatch <| Reset
+                    | Ok state -> 
+                        match state with
+                        | GameModel.GotGameId gameId ->
+                            dispatch <| GameJoined (currentPlayer, gameId, state)
+                        | _ ->
+                            dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
+                    | Error e ->
+                        Browser.Dom.console.log(e)
+                        dispatch <| Reset
+                with
+                | ex ->
+                    dispatch <| OnError ex.Message
+
             | _ ->
                 ()
             dispatch <| IsLoading false
@@ -107,15 +125,19 @@ let joinGame gameId currentPlayer =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
-            let! state = pokerApi.joinGame gameId currentPlayer
-            match state with
-            | Ok state -> 
+            try
+                let! state = pokerApi.joinGame gameId currentPlayer
                 match state with
-                | GameModel.GotGameId gameId ->
-                    dispatch <| GameJoined (currentPlayer, gameId, state)
-                | _ ->
-                    dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
-            | Error e -> dispatch <| OnError e
+                | Ok state -> 
+                    match state with
+                    | GameModel.GotGameId gameId ->
+                        dispatch <| GameJoined (currentPlayer, gameId, state)
+                    | _ ->
+                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
+                | Error e -> dispatch <| OnError e
+            with
+            | ex ->
+                dispatch <| OnError ex.Message
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
