@@ -5,19 +5,13 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="public\favicon.png" />
-    <Content Include="public\index.html" />
-    <Content Include="public\style.css" />
-    <None Include="public\app.474f7f83829c34f73639.js" />
-    <None Include="public\app.474f7f83829c34f73639.js.map" />
-    <None Include="public\style.css.map" />
-    <None Include="public\vendors.474f7f83829c34f73639.js" />
-    <None Include="public\vendors.474f7f83829c34f73639.js.map" />
     <Compile Include="Domain.fs" />
     <Compile Include="Api.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="public\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
@@ -29,4 +23,10 @@
     <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup />
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Copy SourceFiles="" DestinationFolder="$(TargetDir)\public" />
+  </Target>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y $(SolutionDir)src\Client\dist $(TargetDir)public" />
+  </Target>
 </Project>
