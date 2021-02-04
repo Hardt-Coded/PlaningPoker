@@ -10,7 +10,9 @@
     <Compile Include="Server.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="public\" />
+		<Content Include="..\Client\dist\**" LinkBase="public">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.fsproj" />
@@ -23,10 +25,4 @@
     <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup />
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Copy SourceFiles="" DestinationFolder="$(TargetDir)\public" />
-  </Target>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y $(SolutionDir)src\Client\dist $(TargetDir)public" />
-  </Target>
 </Project>

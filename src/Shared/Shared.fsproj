@@ -5,7 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="repl.fsx" />
+    <Compile Include="ResultBuilder.fs" />
     <Compile Include="Shared.fs" />
   </ItemGroup>
-  <ItemGroup />
 </Project>

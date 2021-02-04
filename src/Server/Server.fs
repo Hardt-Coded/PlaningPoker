@@ -15,6 +15,8 @@ open Saturn.Channels
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration
 open System
+open Microsoft.ApplicationInsights
+open Microsoft.Extensions.Logging.ApplicationInsights
 
 
 let [<Literal>]WebSocketChannelPath = "/socket/poker"
@@ -42,16 +44,18 @@ let channel =
         )
     }
 
-let configAi (builder:ILoggingBuilder) =
-    builder.SetMinimumLevel(LogLevel.Information) |> ignore
-    builder.AddApplicationInsights() |> ignore
-    builder.AddConsole() |> ignore
+let configAi (logging:ILoggingBuilder) =
+    logging.ClearProviders()  |> ignore
+    logging.AddApplicationInsights() |> ignore
+    logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Trace) |> ignore
+    logging.AddConsole() |> ignore
 
 let configureServices (services: IServiceCollection) =
     services.AddApplicationInsightsTelemetry() |> ignore
     
     let gameEngineFactory (sp:IServiceProvider) =
         let logger = sp.GetService<ILogger<GameEngine>>()
+        
         let log (str:string) = 
             logger.LogInformation(str)
 

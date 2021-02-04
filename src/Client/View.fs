@@ -9,6 +9,7 @@ open Styling
 
 
 open Fable.MaterialUI.Icons
+open Feliz.MaterialUI
 
 let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (onTextChange: string -> unit) (onClick:unit -> unit) isLoading (name:string)  =
     Mui.container [
@@ -121,7 +122,11 @@ let renderStartView (classes:CustomStyles) state dispatch =
                         Mui.paper [
                             paper.classes.root classes.centerPaper
                             paper.children [
-                                Html.h1 "Welcome to the F# Planing Poker Game"
+                                Mui.typography [
+                                    typography.children "Welcome to the F#ncy Planing Poker Game"
+                                    typography.align.center
+                                    typography.variant.h3
+                                ]
                             ]
                         ]
                     ]
@@ -400,20 +405,22 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                                 ]
                                 Mui.tableBody [
 
-                                    let counts = [
-                                        inGameState |> GameModel.countPlayeredCards One
-                                        inGameState |> GameModel.countPlayeredCards Two
-                                        inGameState |> GameModel.countPlayeredCards Three
-                                        inGameState |> GameModel.countPlayeredCards Five
-                                        inGameState |> GameModel.countPlayeredCards Eight
-                                        inGameState |> GameModel.countPlayeredCards Thirtheen
-                                        inGameState |> GameModel.countPlayeredCards Twenty
-                                        inGameState |> GameModel.countPlayeredCards Fourty
-                                        inGameState |> GameModel.countPlayeredCards Hundred
-                                        inGameState |> GameModel.countPlayeredCards Stop
-                                        inGameState |> GameModel.countPlayeredCards Coffee
-                                        inGameState |> GameModel.countPlayeredCards IDontKnow
-                                    ]
+                                    let counts = 
+                                        [
+                                            One
+                                            Two
+                                            Three
+                                            Five
+                                            Eight
+                                            Thirtheen
+                                            Twenty
+                                            Fourty
+                                            Hundred
+                                            Stop
+                                            Coffee
+                                            IDontKnow
+                                        ]
+                                        |> List.map (fun v -> inGameState |> GameModel.countPlayeredCards v)
 
                                     let maxCount = counts |> List.max
 
@@ -535,7 +542,7 @@ let view state dispatch =
                                     | JoinGameView _
                                     | CreateGameView _ ->
                                         Elements.toolbar state.Theme None None dispatch
-                                    | InGameView { CurrentGameState = (InGame inGameState); CurrentPlayer= player; GameId = gameId; } ->
+                                    | InGameView { CurrentGameState = _; CurrentPlayer= player; GameId = gameId; } ->
                                         Elements.toolbar state.Theme (Some player) (Some gameId) dispatch
                                 ]
                             ]
@@ -556,6 +563,8 @@ let view state dispatch =
                                         Mui.typography "Wait ... for the end ..."
 
                                     Dialog.AlertDialog (state.Error<>"") (fun () -> dispatch ClearError) "Error" state.Error
+                                        
+                                    Dialog.AlertDialog (state.Message<>("","")) (fun () -> dispatch ClearMessage) (state.Message |> fst) (state.Message |> snd)
 
                             
                                 ]

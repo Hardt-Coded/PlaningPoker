@@ -38,10 +38,19 @@ module Domain =
     module Player =
     
         let create name =
-            Player (Guid.NewGuid(), name)
+            if name = "" then
+                "The Name is empty!" |> Error
+            else
+                Player (Guid.NewGuid(), name) |> Ok
 
         let build (id:string) name =
-            Player (Guid id, name)
+            let (is, guid) = Guid.TryParse(id)
+            if name = "" then
+                "The Name is empty!" |> Error
+            elif not is then
+                "Invalid id Format" |> Error
+            else
+                Player (Guid id, name) |> Ok
 
         let extract (Player (id,name)) = id,name
 
@@ -52,9 +61,15 @@ module Domain =
 
     module GameId =
 
-        let create id = GameId id
+        let create id = 
+            if id = "" then
+                "GameId is empty!" |> Error
+            else
+                GameId id |> Ok
 
         let extract (GameId id) = id
+
+        let internal build id = GameId id
 
         let (|GetGameId|) (GameId gameId) = gameId
 
@@ -66,7 +81,7 @@ module Domain =
     module Game =
 
         let create admin =
-            let gameId = GameId.create <| Guid.NewGuid().ToString("N")
+            let gameId = GameId.build <| Guid.NewGuid().ToString("N")
             Game (gameId, admin)
 
 
@@ -88,9 +103,6 @@ module Domain =
         | Beginning
         | InRound
         | DisplayResult
-
-
-    
 
 
 
@@ -141,15 +153,9 @@ module Domain =
 
 
         let countPlayeredCards cardValue gameModel  =
-            //match gameModel with
-            //| InGame { PlayedCards = playedCard } ->
             gameModel.PlayedCards
             |> List.filter (fun pc -> (pc.Card |> Card.extract) = cardValue)
             |> List.length
-            //| _ ->
-            //    0
-
-
 
 
 

@@ -216,7 +216,7 @@
                                     let currentGameState = gameStates |> List.tryFind (fun (g,_) -> g = gameId)
                                     match currentGameState with
                                     | None ->
-                                        replyChannel.Reply <| Error "Game doesn't exisits"
+                                        replyChannel.Reply <| Error "Game doesn't exists"
                                         return! loop gameStates
 
                                     | Some (currentGame, currentGameState) ->

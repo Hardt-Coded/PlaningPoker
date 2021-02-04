@@ -66,26 +66,23 @@ let createGame currentPlayer =
     |> Cmd.ofSub
 
 
-let resetWhenGameNotExists id =
+let resetWhenGameNotExists gameId =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
-            if id <> "" then
-                try
-                    let! state = pokerApi.getState (GameId.create id)
-                    match state with
-                    | Ok _ ->
-                        ()
-                    | Error e ->
-                        Browser.Dom.console.log(e)
-                        dispatch <| Reset
-                        dispatch <| Navigate []
-                with
-                | ex ->
-                    dispatch <| OnError ex.Message
-            else
-                ()
-
+            try
+                let! state = pokerApi.getState gameId
+                match state with
+                | Ok _ ->
+                    ()
+                | Error e ->
+                    Browser.Dom.console.log(e)
+                    dispatch <| Reset
+                    dispatch <| Navigate []
+            with
+            | ex ->
+                dispatch <| OnError ex.Message
+            
             dispatch <| IsLoading false
         } |> Async.StartImmediate
     |> Cmd.ofSub
@@ -143,9 +140,28 @@ let joinGame gameId currentPlayer =
         } |> Async.StartImmediate
     |> Cmd.ofSub
 
-
+// "Game doesn't exists"
 let endGame gameId currentPlayer = 
-    sendCommand (fun () -> pokerApi.endGame gameId currentPlayer)
+    fun dispatch ->
+        async {
+            dispatch <| IsLoading true
+            try
+                let! state = pokerApi.endGame gameId currentPlayer
+            
+                match state with
+                | Ok state -> 
+                    dispatch <| SetCurrentGameState state
+                | Error "Game doesn't exists" -> // exception, if the game not exisit any more, leave display no error and end the game
+                    dispatch <| SetCurrentGameState (GameEnded gameId)
+                | Error e -> dispatch <| OnError e
+            with
+            | ex ->
+                dispatch <| OnError ex.Message
+
+            dispatch <| IsLoading false
+        } |> Async.StartImmediate
+    |> Cmd.ofSub
+    
 
 let leaveGame gameId currentPlayer playerToLeave = 
     sendCommand (fun () -> pokerApi.leaveGame gameId currentPlayer playerToLeave)

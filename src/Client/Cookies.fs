@@ -27,7 +27,7 @@ let private playerFromStr (str:string) =
     let s = str.Split("|") |> Array.toList
     match s with
     | [ name; id ] ->
-        Some (Player.build id name)
+        (Player.build id name) |> Result.toOption
     | _ ->
         None
 
@@ -39,7 +39,7 @@ let [<Literal>] PlayerCookie = "current-player"
 
 let getGameId () : GameId option =
     JsCookie.get GameIdCookie
-    |> Option.map GameId.create
+    |> Option.bind (GameId.create >> Result.toOption)
 
 
 let getCurrentPlayer () : Player option =

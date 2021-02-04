@@ -17,6 +17,7 @@ let init isDarkMode =
 
     let state = {
         Error = ""
+        Message = "",""
         Theme = if isDarkMode then Dark else Light
         IsLoading = false
         View = 
@@ -27,14 +28,21 @@ let init isDarkMode =
     }
     
     let gameId = Cookies.getGameId ()
+    let cmdResult =
+        result {
+            let! gameIdFromCookies = (Cookies.getGameId(),"")
+            let! gameIdFromUrlId = GameId.create id
+            if (gameIdFromCookies<>gameIdFromUrlId) then
+                return Commands.resetWhenGameNotExists gameIdFromUrlId
+            else
+                return Commands.joinGameFromCookiesOrCheckGameExisits ()
+        }
+    match cmdResult with
+    | Ok cmd ->
+        state, cmd
+    | Error _ ->
+        state, Cmd.none
 
-    let cmd =
-        if id <> "" && gameId <> Some (GameId.create id) then
-            Commands.resetWhenGameNotExists id
-        else
-            Commands.joinGameFromCookiesOrCheckGameExisits ()
-
-    state, cmd
 
 
 let update (msg:Models.Msg) state =
@@ -43,15 +51,17 @@ let update (msg:Models.Msg) state =
     | _, Reset ->
         {
             Error = ""
+            Message = "",""
             Theme = state.Theme
             IsLoading = false
             View = CreateGameView {| Name = "" |}
         }, Cmd.batch [ Commands.removeCookies (); Cmd.ofMsg (Navigate [ "" ])]
     | CreateGameView viewState, CreateGame ->
-        if (viewState.Name = "") then
-            state, Cmd.ofMsg <| OnError "Name is empty!"
-        else
-            let player = Player.create viewState.Name
+        let player = Player.create viewState.Name
+        match player with
+        | Error e ->
+            state, Cmd.ofMsg <| OnError e
+        | Ok player ->
             state, Commands.createGame player
 
     | CreateGameView _, GameCreated (player,gameId,gameState) ->
@@ -66,18 +76,22 @@ let update (msg:Models.Msg) state =
                 Cmd.ofMsg <| ConnectToWebSocket gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
+                Cmd.ofMsg <| OnMessage ("Share the Link", "In order to add new players, please share the link from your browser address with the others.")
             ]
         { state with View = view }, cmds
 
     | JoinGameView viewState, JoinGame ->
-        if (viewState.Id = "") then
-            state, Cmd.ofMsg <| OnError "Id is empty!"
-        elif (viewState.Name = "") then
-            state, Cmd.ofMsg <| OnError "Name is empty!"
-        else
-            let player = Player.create viewState.Name
-            let gameId = GameId.create viewState.Id
-            state, Commands.joinGame gameId player
+        let cmdResult =
+            result {
+                let! player = Player.create viewState.Name
+                let! gameId = GameId.create viewState.Id
+                return Commands.joinGame gameId player
+            }
+        match cmdResult with
+        | Error e ->
+            state, Cmd.ofMsg <| OnError e
+        | Ok cmd ->
+            state, cmd
 
     | JoinGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
@@ -186,8 +200,12 @@ let update (msg:Models.Msg) state =
         state, Cmd.ofMsg Reset
     | _, OnError error ->
         { state with Error = error }, Cmd.none
+    | _, OnMessage (title,error) ->
+        { state with Message = title,error }, Cmd.none
     | _, ClearError ->
         { state with Error = "" }, Cmd.none
+    | _, ClearMessage ->
+        { state with Message = ("","") }, Cmd.none
     | _, ToggleTheme ->
         let newTheme = 
             match state.Theme with

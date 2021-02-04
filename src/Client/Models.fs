@@ -9,9 +9,7 @@
 
     open Browser.Types
 
-    // CreateGame
-    // JoinGame
-    // InGame
+    
 
     type InGameArgs = {
         CurrentPlayer: Player; 
@@ -28,23 +26,12 @@
     type Model = {
         Theme: Theme
         Error: string
+        Message: (string * string)
         IsLoading:bool
         View: View
     }
 
-    //type Model =
-    //    { 
-    //        Theme: Theme
-    //        CurrentGameState: GameModel
-    //        GameId: GameId option
-    //        CurrentPlayer: Player option
-    //        Name: string
-    //        Id: string
-    //        Error: string
-    //        IsLoading:bool
-    //        WebSocket: WebSocket option
-    //    }
-    
+     
     type Msg =
         | CreateGame
         | GameCreated of Player * GameId * GameModel
@@ -61,7 +48,9 @@
         | DisconnectWebSocket
         | WebSocketDisconnected
         | OnError of string
+        | OnMessage of title:string * message:string
         | ClearError
+        | ClearMessage
 
         | ToggleTheme
         | IsLoading of bool
