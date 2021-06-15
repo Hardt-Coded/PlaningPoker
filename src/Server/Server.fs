@@ -59,7 +59,11 @@ let configureServices (services: IServiceCollection) =
         let log (str:string) = 
             logger.LogInformation(str)
 
-        let dbRepo = DataAccess.initGameRepository "UseDevelopmentStorage=true;"
+        let configuration = sp.GetService<IConfiguration>()
+
+        let connectionStr = configuration.GetValue("TableStorageConnectionString")
+
+        let dbRepo = DataAccess.initGameRepository connectionStr
 
         GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
 
