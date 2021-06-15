@@ -18,11 +18,13 @@
     <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Remoting.Giraffe" Version="4.15.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.16.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
-    <PackageReference Include="Saturn" Version="0.14.1" />
-    <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
+    <PackageReference Include="Fable.Remoting.Giraffe" Version="5.2.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.17.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.17.0" />
+    <PackageReference Include="Saturn" Version="0.15.0" />
+    <PackageReference Include="Thoth.Json.Giraffe" Version="5.0.0" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.1" />
+  </ItemGroup>
 </Project>
