@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Domain.fs" />
+    <Compile Include="DataAccess.fs" />
     <Compile Include="Api.fs" />
     <Compile Include="Server.fs" />
   </ItemGroup>
@@ -18,9 +19,12 @@
     <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Fable.Remoting.Giraffe" Version="5.2.0" />
+    <PackageReference Include="Fable.Remoting.Giraffe" Version="5.3.0" />
+    <PackageReference Include="FSharp.Azure.Storage" Version="5.0.1" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.17.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.17.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="1.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Saturn" Version="0.15.0" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="5.0.0" />
   </ItemGroup>

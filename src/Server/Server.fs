@@ -59,7 +59,9 @@ let configureServices (services: IServiceCollection) =
         let log (str:string) = 
             logger.LogInformation(str)
 
-        GameEngine(log)
+        let dbRepo = DataAccess.initGameRepository "UseDevelopmentStorage=true;"
+
+        GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
 
     services.AddSingleton<GameEngine>(gameEngineFactory)
 

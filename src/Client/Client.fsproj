@@ -27,7 +27,7 @@
         <PackageReference Include="Fable.MaterialUI.Icons" Version="1.3.0" />
         <PackageReference Include="Fable.MaterialUI.MaterialDesignIcons" Version="3.0.0" />
         <PackageReference Include="Fable.React" Version="7.4.1" />
-        <PackageReference Include="Fable.Remoting.Client" Version="7.15.0" />
+        <PackageReference Include="Fable.Remoting.Client" Version="7.16.0" />
         <PackageReference Include="Feliz.MaterialUI" Version="1.2.6" />
         <PackageReference Include="Feliz" Version="1.47.0" />
         <PackageReference Include="Feliz.UseElmish" Version="1.5.1" />
