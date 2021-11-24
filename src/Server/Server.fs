@@ -10,7 +10,7 @@ open Fable.Remoting.Giraffe
 open Fable.Remoting.Server
 open Microsoft.AspNetCore.Http
 open Shared.Api
-open FSharp.Control.Tasks.V2
+open FSharp.Control.Tasks
 open Saturn.Channels
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Configuration
@@ -59,7 +59,13 @@ let configureServices (services: IServiceCollection) =
         let log (str:string) = 
             logger.LogInformation(str)
 
-        GameEngine(log)
+        let configuration = sp.GetService<IConfiguration>()
+
+        let connectionStr = configuration.GetValue("TableStorageConnectionString")
+
+        let dbRepo = DataAccess.initGameRepository connectionStr
+
+        GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
 
     services.AddSingleton<GameEngine>(gameEngineFactory)
 

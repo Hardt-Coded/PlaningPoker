@@ -4,7 +4,7 @@
     open Shared.Domain
     open Shared.Api
     open Saturn.Channels
-    open FSharp.Control.Tasks.V2
+    open FSharp.Control.Tasks
 
     
     let sendMessage (hub:ISocketHub) channelPath topic payload =

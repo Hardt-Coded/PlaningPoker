@@ -40,8 +40,10 @@
                 InGame { state with State = DisplayResult } |> Ok
             else
                 $"Only the admin can finish a round before its over!" |> Error
+
         | Some currentPlayer, InGame state , PlayCard card when state.State = InRound ->
             state |> playCard currentPlayer card
+
         | Some currentPlayer, InGame state , PlayCard _ ->
             "You can only play a card, when you are playing a round" |> Error
 
@@ -126,126 +128,94 @@
         | GetState of game:GameId * AsyncReplyChannel<Result<GameModel,string>>
 
 
-    type GameEngine(log:string->unit) =
-    
 
-        let getState gameId states =
-            states |> List.tryFind (fun (gid,_) -> gid = gameId)
+    type GameState = (GameId * GameModel)
 
 
-        let removeGamestate currentGame gameStates =
-            gameStates
-            |> List.filter (fun (g,s) ->g <> currentGame)
+    type GameEngine(log:string->unit, 
+        getGameState: GameId-> Async<GameState option>, 
+        addGameState: GameState -> Async<unit>,
+        updateGameState: GameState -> Async<unit>,
+        deleteGameState: GameId -> Async<unit>) =
 
 
-        let updateGamestate currentGame newState gameStates =
-            gameStates 
-            |> List.map (fun (g,s) ->
-                if g = currentGame then
-                    (g, newState)
-                else
-                    (g,s)
-            )
-
-        let addGamestate newGame gameStates =
-            newGame::gameStates 
-
-
-        let getLogString (gameStates:(GameId * GameModel) list) =
+        let getLogString (gameStates:GameState list) =
             let join (sep:string) (sl:string array) = System.String.Join (sep,sl)
             gameStates
             |> List.map (fun (g,_) -> $"%A{g}")
             |> List.toArray
             |> join "\r\n"
 
+
         let mailBox = 
             MailboxProcessor<GameEngineMsg>.Start(
                 fun inbox -> 
-                    let rec loop gameStates =
+                    let rec loop () =
                         async {
                             let! msg = inbox.Receive()
                             match msg with 
                             | GetState (gameId, replyChannel) ->
-                                let state = gameStates |> getState gameId 
+                                let! state = getGameState gameId 
                                 match state with
                                 | Some (_,state) ->
                                     replyChannel.Reply <| Ok state
                                 | None ->
                                     replyChannel.Reply <| Error "No gamestate found!"
-                                return! loop gameStates
+                                return! loop ()
 
                             | GameEngineMsg (gameId, player, msg, replyChannel) ->
-
+                                
                                 match gameId with
                                 | None ->
-                                    let alreadyAdminGameId = 
-                                        gameStates 
-                                        |> List.tryFind (fun (_, gs) -> 
-                                            match gs, player with
-                                            | GameModel.GotGameAdmin admin, Some player  ->
-                                                admin = player
-                                            | _ ->
-                                                false
-                                        )
-                                    match alreadyAdminGameId with
-                                    | Some (gi,_) ->
-                                        let gameId = GameId.extract  gi
-                                        replyChannel.Reply ($"You started already started a game with the id '{gameId}'" |> Error)
-                                        return! loop gameStates
-                                    | None ->
-                                        let initState = Init
-                                        let stateResult = update player msg initState
-                                        replyChannel.Reply stateResult
+                                    let initState = Init
+                                    let stateResult = update player msg initState
+                                    replyChannel.Reply stateResult
 
-                                        match stateResult with
-                                        | Ok newState ->
-                                            match newState with
-                                            | GameModel.GotGameId gameId ->
-                                                let newGameStates = gameStates |> addGamestate (gameId, newState)
-                                                log ($"game added: %A{gameId}")
-                                                log ($"games: {getLogString newGameStates}")
-                                                return! loop newGameStates
-
-                                            | _ ->
-                                                replyChannel.Reply (Error "No GameId found!")
-                                                return! loop gameStates
-                                        | Error _ ->
-                                            return! loop gameStates
+                                    match stateResult with
+                                    | Ok newState ->
+                                        match newState with
+                                        | GameModel.GotGameId gameId ->
+                                            do! addGameState (gameId, newState)
+                                            log ($"game added: %A{gameId}")
+                                            return! loop ()
+                                        | _ ->
+                                            replyChannel.Reply (Error "No GameId found!")
+                                            return! loop ()
+                                    | Error e ->
+                                        log ($"Error: Create NewGame - {e}")
+                                        return! loop ()
 
                                 | Some gameId ->
-                                    let currentGameState = gameStates |> List.tryFind (fun (g,_) -> g = gameId)
+                                    let! currentGameState = getGameState gameId
                                     match currentGameState with
                                     | None ->
                                         replyChannel.Reply <| Error "Game doesn't exists"
-                                        return! loop gameStates
+                                        return! loop ()
 
                                     | Some (currentGame, currentGameState) ->
                                         let stateResult = update player msg currentGameState
                                         replyChannel.Reply stateResult
 
-                                        // in case of endgame remove state
+                                        // in case of end game remove state
                                         match stateResult with
                                         | Ok (GameEnded _) ->
-                                            let newGameStates = 
-                                                gameStates |> removeGamestate currentGame
+                                            do! deleteGameState gameId
                                             log ($"game removed: %A{currentGame}")
-                                            log ($"games: {getLogString newGameStates}")
 
-                                            return! loop newGameStates
+                                            return! loop ()
 
                                         | Ok newState ->
-                                            let newGameStates = 
-                                                gameStates |> updateGamestate currentGame newState
-                                                
-                                            return! loop newGameStates
+                                            do! updateGameState (currentGame, newState)
+                                            return! loop ()
                                         | Error e ->
-                                            return! loop gameStates
+                                            log ($"Error: %A{currentGame} - {e}")
+                                            return! loop ()
                                         
                                 
                                         
                             }
 
-                    loop []
+                    loop ()
         )
 
 

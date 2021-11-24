@@ -21,3 +21,6 @@ src/Shared/*.js
 /src/Client/dist
 /src/Server/Properties/PublishProfiles
 /src/Server/Properties/ServiceDependencies/fancy-planing-poker - Web Deploy
+/src/Client/*.user
+/_ReSharper.Caches/**
+/src/Server/public
