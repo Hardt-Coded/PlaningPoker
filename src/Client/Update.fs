@@ -46,7 +46,6 @@ let init isDarkMode =
 
 
 let update (msg:Models.Msg) state =
-    Browser.Dom.console.log ($"%A{msg}")
     match state.View, msg with
     | _, Reset ->
         {
@@ -67,13 +66,13 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameCreated (player,gameId,gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            //WebSocket = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
                 Cmd.ofMsg <| OnMessage ("Share the Link", "In order to add new players, please share the link from your browser address with the others.")
@@ -96,13 +95,13 @@ let update (msg:Models.Msg) state =
     | JoinGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            //WebSocket = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
             ]
@@ -112,13 +111,13 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            //WebSocket = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
             ]
@@ -183,21 +182,14 @@ let update (msg:Models.Msg) state =
     | _, SetCurrentGameState gameModel ->
         state, Cmd.none
 
-    | InGameView viewState, ConnectToWebSocket gameId ->
-        state, Commands.WebSocket.connectWebSocketCmd gameId
-    | InGameView viewState, SetWebSocketHandler ws ->
-        let newViewState = { viewState with WebSocket = Some ws }
-        { state with View = InGameView newViewState },Cmd.none
+    | InGameView viewState, ConnectToSignalR gameId ->
+        state, Commands.SignalR.openSignalRConnectionCmd gameId
+    | InGameView viewState, SignalRConnected ->
+        state,Cmd.none
     | InGameView viewState, DisconnectWebSocket ->
-        let cmd = 
-            match viewState.WebSocket with
-            | None ->
-                Cmd.none
-            | Some ws ->
-                Commands.WebSocket.disconnectWebsocket ws
-        state,cmd
+        state,Cmd.none
     | _, WebSocketDisconnected ->
-        state, Cmd.ofMsg Reset
+        state,Cmd.none
     | _, OnError error ->
         { state with Error = error }, Cmd.none
     | _, OnMessage (title,error) ->

@@ -13,7 +13,7 @@
 
     type InGameArgs = {
         CurrentPlayer: Player; 
-        WebSocket: WebSocket option; 
+        //WebSocket: WebSocket option; 
         GameId: GameId; 
         CurrentGameState: GameModel
     }
@@ -43,8 +43,8 @@
         | ChangeId of string
         | LoadState
         | SetCurrentGameState of GameModel
-        | ConnectToWebSocket of GameId
-        | SetWebSocketHandler of WebSocket
+        | ConnectToSignalR of GameId
+        | SignalRConnected
         | DisconnectWebSocket
         | WebSocketDisconnected
         | OnError of string

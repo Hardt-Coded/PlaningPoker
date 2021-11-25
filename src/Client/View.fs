@@ -521,7 +521,6 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
 
 
 let view state dispatch =
-    Browser.Dom.console.log ($"%A{state}")
     let classes = useStyles ()
     React.router [
         router.onUrlChanged (UrlChanged >> dispatch)
