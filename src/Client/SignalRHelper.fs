@@ -28,9 +28,3 @@ type ISignalR =
 
 let signalR:ISignalR = importAll "@microsoft/signalr"
 
-
-let connection = 
-    signalR.CreateHubConnectionBuilder()
-        .withUrl("bla", !!{| accesTokenFactory = (fun () -> "hallo") |})
-        .build()
-

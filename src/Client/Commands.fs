@@ -60,7 +60,7 @@ module SignalR =
 
             let connection =
                 SignalRHelper.signalR.CreateHubConnectionBuilder()
-                    .withUrl(info.url, !!{| accesTokenFactory = (fun () -> info.accessToken) |})
+                    .withUrl(info.url, !!{| accessTokenFactory = (fun () -> info.accessToken) |})
                     .build()
             
             connection.on("newState",(fun (data:obj) -> onNewState data))

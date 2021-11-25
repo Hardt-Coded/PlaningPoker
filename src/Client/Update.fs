@@ -174,6 +174,21 @@ let update (msg:Models.Msg) state =
                     Cmd.ofMsg Reset
                 ] |> Cmd.batch
             state, cmds
+        | InGame inGameModel ->
+            let didYouExistAnyMore = inGameModel.Players |> List.exists (fun p -> p = viewState.CurrentPlayer)
+            if didYouExistAnyMore then
+                let newViewState = { viewState with CurrentGameState = gameModel }
+                { state with View = InGameView newViewState; Error = "" }, Cmd.none
+            else
+                // reset game and disconnect from signalR
+                let cmd =
+                    let cmds = [
+                            Cmd.ofMsg DisconnectSignalR
+                            Cmd.ofMsg Reset
+                    ]
+                    Cmd.batch cmds
+                state, cmd
+                
         | _ ->
             let newViewState = { viewState with CurrentGameState = gameModel }
             { state with View = InGameView newViewState; Error = "" }, Cmd.none
