@@ -66,7 +66,7 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameCreated (player,gameId,gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            //WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
@@ -95,7 +95,7 @@ let update (msg:Models.Msg) state =
     | JoinGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            //WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
@@ -111,7 +111,7 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            //WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
@@ -147,7 +147,7 @@ let update (msg:Models.Msg) state =
                 // Disconnect from the WebSocket, so you don't get any refreshed.
                 // also reset the state
                 if (viewState.CurrentPlayer = playerToLeave) then
-                    Cmd.ofMsg DisconnectWebSocket
+                    Cmd.ofMsg DisconnectSignalR
                     Cmd.ofMsg Reset
             ]
             Cmd.batch cmds
@@ -170,7 +170,7 @@ let update (msg:Models.Msg) state =
         | GameEnded gameId -> // game was ended by admin
             let cmds = 
                 [
-                    Cmd.ofMsg DisconnectWebSocket
+                    Cmd.ofMsg DisconnectSignalR
                     Cmd.ofMsg Reset
                 ] |> Cmd.batch
             state, cmds
@@ -181,15 +181,16 @@ let update (msg:Models.Msg) state =
     // if the Gamestate comes over the web socket and if you not anymore in the game. Nobody cares.
     | _, SetCurrentGameState gameModel ->
         state, Cmd.none
-
     | InGameView viewState, ConnectToSignalR gameId ->
-        state, Commands.SignalR.openSignalRConnectionCmd gameId
-    | InGameView viewState, SignalRConnected ->
-        state,Cmd.none
-    | InGameView viewState, DisconnectWebSocket ->
-        state,Cmd.none
-    | _, WebSocketDisconnected ->
-        state,Cmd.none
+        state, Commands.SignalR.connectSignalRCmd gameId
+    | InGameView viewState, SignalRConnected connection ->
+        { state with View = InGameView { viewState with SignalRConnection = Some connection }},Cmd.none
+    | InGameView viewState, DisconnectSignalR ->
+        state,Commands.SignalR.disconnectSignalRCmd viewState.SignalRConnection
+    | InGameView viewState, SignalRDisconnected ->
+        { state with View = InGameView { viewState with SignalRConnection = None }},Cmd.none
+    | _, SignalRDisconnected ->
+        state, Cmd.none
     | _, OnError error ->
         { state with Error = error }, Cmd.none
     | _, OnMessage (title,error) ->

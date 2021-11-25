@@ -7,6 +7,7 @@ open Shared.Api
 open Shared.Domain
 open Models
 open Elmish
+open SignalRHelper
 
 
 let baseUrl = "http://localhost:7071"
@@ -18,6 +19,7 @@ let pokerApi =
     |> Remoting.buildProxy<IPokerApi>
 
 
+[<RequireQualifiedAccess>]
 module SignalR =
 
     open Fable.Core
@@ -29,7 +31,7 @@ module SignalR =
         accessToken:string
     }        
 
-    let getConnectionInfo (gameId:string) =
+    let private getConnectionInfo (gameId:string) =
         async {
             let url = $"{baseUrl}/api/negotiate?username={gameId}&hubname={Shared.SignalR.hubName}"
 
@@ -49,34 +51,36 @@ module SignalR =
         }
 
 
-    
+    open Fable.Core.JsInterop
 
-    let openSignalRConnection (info:SignalRConnectionInfo) onNewState =
+    let private openSignalRConnection (info:SignalRConnectionInfo) onNewState =
         async {
             
             Fable.Core.JS.console.log ("signalr init connection!")
 
             let connection =
-                SignalRHelper.connectionBuilder.Create()
-                    .WithUrl(info.url, info.accessToken)
-                    .Build()
+                SignalRHelper.signalR.CreateHubConnectionBuilder()
+                    .withUrl(info.url, !!{| accesTokenFactory = (fun () -> info.accessToken) |})
+                    .build()
             
-            connection.On("newState",(fun (data:obj) -> onNewState data))
+            connection.on("newState",(fun (data:obj) -> onNewState data))
 
             Fable.Core.JS.console.log ("signalr connecting!")
-            do! connection.Start() |> Async.AwaitPromise
+            do! connection.start() |> Async.AwaitPromise
             Fable.Core.JS.console.log ("signalr connected!")
+
+            return connection
         }
 
 
 
-    let openSignalRConnectionCmd gameId =
+    let connectSignalRCmd gameId =
         fun dispatch ->
             async {
                 try
                     let gameId = gameId |> GameId.extract
                     let! info = getConnectionInfo gameId
-                    do! openSignalRConnection info (fun data -> 
+                    let! connection = openSignalRConnection info (fun data -> 
                         let payload = Json.parseAs<{| GameId:GameId; GameModel:GameModel |}> (data |> string)
                         let incommingGameId = payload.GameId |> GameId.extract
                         if (gameId <> incommingGameId) then
@@ -84,7 +88,7 @@ module SignalR =
                         else
                             dispatch <| SetCurrentGameState payload.GameModel
                     )
-                    dispatch SignalRConnected
+                    dispatch <| SignalRConnected connection
                 with
                 | _ as ex ->
                     dispatch (OnError ex.Message)
@@ -92,6 +96,27 @@ module SignalR =
     
             } |> Async.StartImmediate
             
+        |> Cmd.ofSub
+
+
+    let disconnectSignalRCmd (connection:IHubConnection option) =
+        fun dispatch ->
+            async {
+                try
+                    match connection with
+                    | None ->
+                        ()
+                    | Some connection ->
+                        connection.off("newState")
+                        do! connection.stop() |> Async.AwaitPromise
+                        dispatch <| SignalRDisconnected
+                with
+                | _ as ex ->
+                    dispatch (OnError ex.Message)
+                    raise ex
+    
+            } |> Async.StartImmediate
+        
         |> Cmd.ofSub
 
 

@@ -1,40 +1,36 @@
 ﻿module SignalRHelper
 
-open System
 open Fable.Core
+open Fable.Core.JsInterop
 open Fable.Core.JS
-
-type SignalRResult = {
-    Result: obj
-}
+open System
 
 type IHubConnection =
-    
-    
-    [<Emit("$0.on($1,$2)")>]
-    abstract On:string * (obj -> unit) -> unit
-    
-    
-    [<Emit("$0.start()")>]
-    abstract Start:unit -> Promise<unit>
+    abstract on:string * (obj -> unit) -> unit
+    abstract on:string * (obj * obj -> unit) -> unit
+    abstract on:string * (obj * obj * obj -> unit) -> unit
+    abstract on:string * (obj * obj * obj * obj -> unit) -> unit
+    abstract off:string -> unit
+    abstract start:unit -> Promise<unit>
+    abstract stop:unit -> Promise<unit>
 
+type IHttpConnectionOptions =
+    abstract accessTokenFactory:unit->string
 
 type IConnectionBuilder =
-    [<Emit("new signalr.HubConnectionBuilder()")>]
-    abstract Create: unit->IConnectionBuilder
-    [<Emit("$0.withUrl($1,{ accessTokenFactory: function() { return $2; } })")>]
-    abstract WithUrl: string * string -> IConnectionBuilder
-    [<Emit("$0.build()")>]
-    abstract Build: unit-> IHubConnection
+    //[<Emit("$0.withUrl($1,{ accessTokenFactory: function() { return $2; } })")>]
+    abstract withUrl: string * IHttpConnectionOptions -> IConnectionBuilder
+    abstract build: unit-> IHubConnection 
+
+type ISignalR =
+    [<Emit("new $0.HubConnectionBuilder()")>]
+    member this.CreateHubConnectionBuilder(): IConnectionBuilder = jsNative
+
+let signalR:ISignalR = importAll "@microsoft/signalr"
 
 
-
-//type ISignalR =
-//    member this.connectionBuilder:IConnectionBuilder = jsNative
-
-
-//let signalR:ISignalR = jsNative
-[<Import("*", from="@microsoft/signalr")>]
-let connectionBuilder:IConnectionBuilder = jsNative
-
+let connection = 
+    signalR.CreateHubConnectionBuilder()
+        .withUrl("bla", !!{| accesTokenFactory = (fun () -> "hallo") |})
+        .build()
 
