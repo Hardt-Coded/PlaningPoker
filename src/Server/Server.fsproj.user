@@ -4,6 +4,7 @@
     <ActiveDebugProfile>Server</ActiveDebugProfile>
     <ShowAllFiles>true</ShowAllFiles>
     <NameOfLastUsedPublishProfile>fancy-planing-poker - Web Deploy</NameOfLastUsedPublishProfile>
+    <_LastSelectedProfileId>D:\Projects\PlaningPoker\src\Server\Properties\PublishProfiles\planing-poker - Zip Deploy.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>

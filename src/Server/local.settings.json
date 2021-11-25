@@ -3,7 +3,7 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=True",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "AzureSignalRConnectionString": "Endpoint=https://planing-poker.service.signalr.net;AccessKey=8C4gs06Y7+lH2rupMbEi9dESZIlX404g+dhTMjnKFG4=;Version=1.0;",
+    "AzureSignalRConnectionString": "",
     "AzureSignalRServiceTransportType": "Transient"
   },
   "Host": {

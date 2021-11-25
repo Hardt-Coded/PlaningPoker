@@ -5,6 +5,8 @@
         <DefineConstants>FABLE_COMPILER</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
+        <Content Include="public\config.js" />
+        <Content Include="public\favicon.png" />
         <None Include="styles\styling.scss" />
         <None Include="index.html" />
         <Compile Include="SignalRHelper.fs" />
@@ -19,6 +21,7 @@
         <Compile Include="App.fs" />
         <Compile Include="Main.fs" />
     </ItemGroup>
+    <ItemGroup />
     <ItemGroup>
         <ProjectReference Include="..\Shared\Shared.fsproj" />
     </ItemGroup>

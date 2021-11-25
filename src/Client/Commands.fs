@@ -8,13 +8,17 @@ open Shared.Domain
 open Models
 open Elmish
 open SignalRHelper
+open Fable.Core
 
 
-let baseUrl = "http://localhost:7071"
+
+
+[<Global>]
+let pokerBaseUrl:string = jsNative
 
 let pokerApi =
     Remoting.createApi()
-    |> Remoting.withBaseUrl baseUrl
+    |> Remoting.withBaseUrl pokerBaseUrl
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IPokerApi>
 
@@ -33,7 +37,7 @@ module SignalR =
 
     let private getConnectionInfo (gameId:string) =
         async {
-            let url = $"{baseUrl}/api/negotiate?username={gameId}&hubname={Shared.SignalR.hubName}"
+            let url = $"{pokerBaseUrl}/api/negotiate?username={gameId}&hubname={Shared.SignalR.hubName}"
 
             let! respo = 
                 Http.request url
