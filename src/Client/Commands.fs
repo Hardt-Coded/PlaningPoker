@@ -33,24 +33,24 @@ module SignalR =
     type SignalRConnectionInfo = {
         url:string
         accessToken:string
-    }        
+    }
 
     let private getConnectionInfo (gameId:string) =
         async {
             let url = $"{pokerBaseUrl}/api/negotiate?username={gameId}&hubname={Shared.SignalR.hubName}"
 
-            let! respo = 
+            let! respo =
                 Http.request url
                 |> Http.method HttpMethod.GET
                 |> Http.header (Header.Header ("x-ms-signalr-userid", gameId))
                 |> Http.send
-            
+
             match respo.statusCode with
-            | 200 -> 
+            | 200 ->
                 Fable.Core.JS.console.log ("signalr negotiated!")
-                let content = Json.parseAs<SignalRConnectionInfo> respo.responseText         
+                let content = Json.parseAs<SignalRConnectionInfo> respo.responseText
                 return content
-            | _ -> 
+            | _ ->
                 return failwith ("error getting signalr service info")
         }
 
@@ -59,14 +59,14 @@ module SignalR =
 
     let private openSignalRConnection (info:SignalRConnectionInfo) onNewState =
         async {
-            
+
             Fable.Core.JS.console.log ("signalr init connection!")
 
             let connection =
                 SignalRHelper.signalR.CreateHubConnectionBuilder()
                     .withUrl(info.url, !!{| accessTokenFactory = (fun () -> info.accessToken) |})
                     .build()
-            
+
             connection.on("newState",(fun (data:obj) -> onNewState data))
 
             Fable.Core.JS.console.log ("signalr connecting!")
@@ -84,7 +84,7 @@ module SignalR =
                 try
                     let gameId = gameId |> GameId.extract
                     let! info = getConnectionInfo gameId
-                    let! connection = openSignalRConnection info (fun data -> 
+                    let! connection = openSignalRConnection info (fun data ->
                         let payload = Json.parseAs<{| GameId:GameId; GameModel:GameModel |}> (data |> string)
                         let incommingGameId = payload.GameId |> GameId.extract
                         if (gameId <> incommingGameId) then
@@ -97,10 +97,8 @@ module SignalR =
                 | _ as ex ->
                     dispatch (OnError ex.Message)
                     raise ex
-    
+
             } |> Async.StartImmediate
-            
-        |> Cmd.ofSub
 
 
     let disconnectSignalRCmd (connection:IHubConnection option) =
@@ -118,10 +116,8 @@ module SignalR =
                 | _ as ex ->
                     dispatch (OnError ex.Message)
                     raise ex
-    
+
             } |> Async.StartImmediate
-        
-        |> Cmd.ofSub
 
 
 let private sendCommandWithSucceed f succeedDispatch =
@@ -130,9 +126,9 @@ let private sendCommandWithSucceed f succeedDispatch =
             dispatch <| IsLoading true
             try
                 let! state = f()
-            
+
                 match state with
-                | Ok state -> 
+                | Ok state ->
                     dispatch <| SetCurrentGameState state
                     succeedDispatch dispatch
                 | Error e -> dispatch <| OnError e
@@ -142,7 +138,6 @@ let private sendCommandWithSucceed f succeedDispatch =
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
 
 
 let private sendCommand f =
@@ -160,7 +155,7 @@ let createGame currentPlayer =
             try
                 let! state = pokerApi.createGame currentPlayer
                 match state with
-                | Ok state -> 
+                | Ok state ->
                     match state with
                     | GameModel.GotGameId gameId ->
                         dispatch <| GameCreated (currentPlayer, gameId, state)
@@ -173,7 +168,6 @@ let createGame currentPlayer =
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
 
 
 let resetWhenGameNotExists gameId =
@@ -192,10 +186,9 @@ let resetWhenGameNotExists gameId =
             with
             | ex ->
                 dispatch <| OnError ex.Message
-            
+
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
 
 
 let joinGameFromCookiesOrCheckGameExisits () =
@@ -208,7 +201,7 @@ let joinGameFromCookiesOrCheckGameExisits () =
                 try
                     let! state = pokerApi.joinGame gameId currentPlayer
                     match state with
-                    | Ok state -> 
+                    | Ok state ->
                         match state with
                         | GameModel.GotGameId gameId ->
                             dispatch <| GameJoined (currentPlayer, gameId, state)
@@ -225,7 +218,6 @@ let joinGameFromCookiesOrCheckGameExisits () =
                 ()
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
 
 
 let joinGame gameId currentPlayer =
@@ -235,7 +227,7 @@ let joinGame gameId currentPlayer =
             try
                 let! state = pokerApi.joinGame gameId currentPlayer
                 match state with
-                | Ok state -> 
+                | Ok state ->
                     match state with
                     | GameModel.GotGameId gameId ->
                         dispatch <| GameJoined (currentPlayer, gameId, state)
@@ -248,18 +240,17 @@ let joinGame gameId currentPlayer =
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
 
 // "Game doesn't exists"
-let endGame gameId currentPlayer = 
+let endGame gameId currentPlayer =
     fun dispatch ->
         async {
             dispatch <| IsLoading true
             try
                 let! state = pokerApi.endGame gameId currentPlayer
-            
+
                 match state with
-                | Ok state -> 
+                | Ok state ->
                     dispatch <| SetCurrentGameState state
                 | Error "Game doesn't exists" -> // exception, if the game not exisit any more, leave display no error and end the game
                     dispatch <| SetCurrentGameState (GameEnded gameId)
@@ -270,19 +261,18 @@ let endGame gameId currentPlayer =
 
             dispatch <| IsLoading false
         } |> Async.StartImmediate
-    |> Cmd.ofSub
-    
 
-let leaveGame gameId currentPlayer playerToLeave = 
+
+let leaveGame gameId currentPlayer playerToLeave =
     sendCommand (fun () -> pokerApi.leaveGame gameId currentPlayer playerToLeave)
 
-let startRound gameId currentPlayer = 
+let startRound gameId currentPlayer =
     sendCommand (fun () -> pokerApi.startRound gameId currentPlayer)
 
-let finishRound gameId currentPlayer = 
+let finishRound gameId currentPlayer =
     sendCommand (fun () -> pokerApi.finishRound gameId currentPlayer)
 
-let playCard gameId currentPlayer card = 
+let playCard gameId currentPlayer card =
     sendCommand (fun () -> pokerApi.playCard gameId currentPlayer card)
 
 
@@ -290,14 +280,12 @@ let setCookies gameId player =
     fun _ ->
         Cookies.setCurrentPlayer player
         Cookies.setGameId gameId
-    |> Cmd.ofSub
 
 let removeCookies () =
     fun _ ->
         Cookies.removeAllCookies ()
-    |> Cmd.ofSub
 
-    
+
 
 
 
@@ -307,17 +295,14 @@ module WebSocket =
 
     open Browser.Types
     open Fable.SimpleJson
-    
+
 
     type ChannelMessage = { Topic: string; Payload: string }
-    
+
 
     let connectWebSocketCmd (gameId:GameId) =
         fun dispatch ->
             ()
-
-
-        |> Cmd.ofSub
 
 
     //let disconnectWebsocket (ws:WebSocket) =

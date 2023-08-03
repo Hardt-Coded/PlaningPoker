@@ -20,6 +20,7 @@ module Domain =
         | Coffee
         | Stop
         | IDontKnow
+        | TrustMeBro
 
 
     type Card = private Card of CardValue
@@ -30,13 +31,13 @@ module Domain =
             Card value
 
         let extract (Card value) = value
-    
+
 
 
     type Player = private Player of id:Guid * name:string
 
     module Player =
-    
+
         let create name =
             if name = "" then
                 "The Name is empty!" |> Error
@@ -61,7 +62,7 @@ module Domain =
 
     module GameId =
 
-        let create id = 
+        let create id =
             if id = "" then
                 "GameId is empty!" |> Error
             else
@@ -96,7 +97,7 @@ module Domain =
             let (id, _) = extract game
             Some id
 
-        
+
 
 
     type InGameState =
@@ -128,7 +129,7 @@ module Domain =
 
     module GameModel =
 
-        let (|GotGameAdmin|_|) gameModel = 
+        let (|GotGameAdmin|_|) gameModel =
             match gameModel with
             | (InGame { Game = Game.GetGameAdmin admin }) ->
                 Some admin
@@ -136,7 +137,7 @@ module Domain =
                 None
 
 
-        let (|GotGameId|_|) gameModel = 
+        let (|GotGameId|_|) gameModel =
             match gameModel with
             | (InGame { Game = Game.GetGameId gameId }) ->
                 Some gameId
@@ -161,11 +162,11 @@ module Domain =
 
     type Msg =
         | CreateGame    of admin:Player
-        | EndGame       
+        | EndGame
         | JoinGame      of player:Player
         | LeaveGame     of player:Player
-        | StartRound    
-        | FinishRound   
+        | StartRound
+        | FinishRound
         | PlayCard      of card:Card
 
 
@@ -182,15 +183,15 @@ module Api =
 
 
     type IPokerApi =
-        { 
+        {
             getState    : GameId -> Result<GameModel,string> Async
-            createGame  : Player -> Result<GameModel,string> Async 
-            endGame     : GameId -> Player -> Result<GameModel,string> Async 
-            joinGame    : GameId -> Player -> Result<GameModel,string> Async 
-            leaveGame   : GameId -> Player -> Player -> Result<GameModel,string> Async 
-            startRound  : GameId -> Player -> Result<GameModel,string> Async 
-            finishRound : GameId -> Player -> Result<GameModel,string> Async 
-            playCard    : GameId -> Player -> Card -> Result<GameModel,string> Async 
+            createGame  : Player -> Result<GameModel,string> Async
+            endGame     : GameId -> Player -> Result<GameModel,string> Async
+            joinGame    : GameId -> Player -> Result<GameModel,string> Async
+            leaveGame   : GameId -> Player -> Player -> Result<GameModel,string> Async
+            startRound  : GameId -> Player -> Result<GameModel,string> Async
+            finishRound : GameId -> Player -> Result<GameModel,string> Async
+            playCard    : GameId -> Player -> Card -> Result<GameModel,string> Async
         }
 
 
@@ -198,5 +199,4 @@ module SignalR =
 
     let [<Literal>] hubName = "poker"
 
-    
-    
+

@@ -24,4 +24,4 @@ src/Shared/*.js
 /src/Client/*.user
 /_ReSharper.Caches/**
 /src/Server/public
-/src/Client/.fable-build/Shared/ResultBuilder.js
+/src/Client/.fable-build

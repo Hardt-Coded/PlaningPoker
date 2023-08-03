@@ -30,7 +30,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
                     lockOutlinedIcon []
                   ]
                 ]
-    
+
               Mui.typography [
                 typography.component' "h1"
                 typography.variant.h5
@@ -65,7 +65,7 @@ let renderLoginForm (classes:CustomStyles) (title:string) (buttonText:string) (o
                       onClick()
                     )
                   ]
-                  
+
                 ]
               ]
             ]
@@ -80,7 +80,7 @@ let renderCreateGameView (classes:CustomStyles) isLoading name dispatch =
         grid.container true
         grid.spacing._2
         grid.children [
-            renderLoginForm 
+            renderLoginForm
                 classes
                 "Create Game"
                 "Create Game!"
@@ -97,7 +97,7 @@ let renderJoinGameView (classes:CustomStyles) isLoading name dispatch =
         grid.container true
         grid.spacing._2
         grid.children [
-            renderLoginForm 
+            renderLoginForm
                 classes
                 "Join Game"
                 "Join Game!"
@@ -144,7 +144,7 @@ let renderStartView (classes:CustomStyles) state dispatch =
 
 
     ]
-    
+
 
 
 
@@ -237,10 +237,10 @@ let renderDeck inGameState dispatch =
         Thirtheen
         Twenty
         Fourty
-        Hundred
         Stop
         Coffee
         IDontKnow
+        TrustMeBro
     ]
     Mui.grid [
         grid.container true
@@ -250,7 +250,7 @@ let renderDeck inGameState dispatch =
                 Mui.grid [
                     grid.item true
                     grid.xs._1
-                    
+
                     grid.children [
                         match inGameState.State with
                         | InRound ->
@@ -260,15 +260,15 @@ let renderDeck inGameState dispatch =
                             let onClick = fun () -> ()
                             Elements.card 1.3 false onClick c
                     ]
-                    
-                        
+
+
                 ]
         ]
     ]
 
 
 
-    
+
 let renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch =
     let (_, pname) = Player.extract player
     Mui.grid [
@@ -287,7 +287,7 @@ let renderPlayerState classes isLoading inGameState player currentPlayer isAdmin
                     // Show Card
                     match inGameState.PlayedCards |> List.tryFind (fun pc -> pc.Player = player) with
                     | Some playedCard ->
-                        let isVisible = 
+                        let isVisible =
                             match inGameState.State with
                             | InRound
                             | Beginning -> player = currentPlayer // only own card
@@ -305,11 +305,11 @@ let renderPlayerState classes isLoading inGameState player currentPlayer isAdmin
                     if (isAdmin) then
                         renderPlayerAdminView classes isLoading player dispatch
                 ]
-            ]    
+            ]
         ]
-            
+
     ]
-    
+
 
 
 let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch =
@@ -319,8 +319,8 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
         let isAdmin = admin = currentPlayer
 
         Elements.loadingSpinner isLoading
-        
-        let row1 = 
+
+        let row1 =
             if inGameState.Players.Length <= 4 then
                 inGameState.Players
             else
@@ -342,11 +342,11 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                     grid.item true
                     grid.xs._2
                 ]
-                
+
             ]
         ]
-        
-        let row2 = 
+
+        let row2 =
             if inGameState.Players.Length <= 6 then
                 inGameState.Players.[4..inGameState.Players.Length-1]
             else
@@ -355,9 +355,9 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
             grid.container true
             grid.spacing._1
             grid.children [
-                if (row2.Length > 0) then 
+                if (row2.Length > 0) then
                     renderPlayerState classes isLoading inGameState row2.[0] currentPlayer isAdmin dispatch
-                else 
+                else
                     Mui.grid [
                         grid.item true
                         grid.xs._2
@@ -370,19 +370,19 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                     grid.children [
                         match inGameState.State with
                         | InRound ->
-                            Mui.typography [ 
+                            Mui.typography [
                                 typography.variant.h4
                                 typography.align.center
                                 typography.children "Choose your Card!"
                             ]
                         | Beginning ->
-                            Mui.typography [ 
+                            Mui.typography [
                                 typography.variant.h4
                                 typography.align.center
                                 typography.children "Prepare yourself, the Game is starting soon!"
                             ]
                         | DisplayResult ->
-                            Mui.typography [ 
+                            Mui.typography [
                                 typography.variant.h4
                                 typography.align.center
                                 typography.children "Look, what we got here"
@@ -399,15 +399,15 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                                         Mui.tableCell "13"
                                         Mui.tableCell "20"
                                         Mui.tableCell "40"
-                                        Mui.tableCell "100"
                                         Mui.tableCell "Stop"
                                         Mui.tableCell "Coffee"
                                         Mui.tableCell "WTF?"
+                                        Mui.tableCell "Trust Me Bro!"
                                     ]
                                 ]
                                 Mui.tableBody [
 
-                                    let counts = 
+                                    let counts =
                                         [
                                             One
                                             Two
@@ -417,10 +417,10 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                                             Thirtheen
                                             Twenty
                                             Fourty
-                                            Hundred
                                             Stop
                                             Coffee
                                             IDontKnow
+                                            TrustMeBro
                                         ]
                                         |> List.map (fun v -> inGameState |> GameModel.countPlayeredCards v)
 
@@ -442,16 +442,16 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                                                 ]
                                             | _ ->
                                                 Mui.tableCell $"{count}"
-                                                
-                                                
-                                            
+
+
+
                                     ]
                                 ]
                             ]
-                            
-                                
+
+
                     ]
-                        
+
                 ]
 
 
@@ -462,7 +462,7 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                         grid.item true
                         grid.xs._2
                     ]
-            
+
                 ]
             ]
 
@@ -488,12 +488,12 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                     grid.item true
                     grid.xs._2
                 ]
-                
+
             ]
         ]
 
         if (inGameState.Players.Length > 10) then
-            let rest = 
+            let rest =
                 inGameState.Players.[11..]
                 |> List.chunkBySize 6
 
@@ -510,7 +510,7 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
                 ]
 
 
-        
+
 
         renderDeck inGameState dispatch
 
@@ -547,7 +547,7 @@ let view state dispatch =
                                         Elements.toolbar state.Theme (Some player) (Some gameId) dispatch
                                 ]
                             ]
-                            
+
                             Html.main [
                                 prop.className classes.content
                                 prop.children [
@@ -564,16 +564,16 @@ let view state dispatch =
                                         Mui.typography "Wait ... for the end ..."
 
                                     Dialog.AlertDialog (state.Error<>"") (fun () -> dispatch ClearError) "Error" state.Error
-                                        
+
                                     Dialog.AlertDialog (state.Message<>("","")) (fun () -> dispatch ClearMessage) (state.Message |> fst) (state.Message |> snd)
 
-                            
+
                                 ]
                             ]
                         ]
                     ]
 
-                    
+
                 ]
             ]
         ]
