@@ -1,86 +1,61 @@
 module Server
 
 open Giraffe
-open Saturn
-
 open Shared
-open Microsoft.Extensions.DependencyInjection
 open Domain
 open Fable.Remoting.Giraffe
 open Fable.Remoting.Server
 open Microsoft.AspNetCore.Http
-open Shared.Api
-open FSharp.Control.Tasks
-open Saturn.Channels
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Configuration
 open System
 open Microsoft.ApplicationInsights
-open Microsoft.Extensions.Logging.ApplicationInsights
+open Saturn.AzureFunctions
+open Microsoft.Azure.WebJobs
+open Microsoft.Azure.WebJobs.Extensions.SignalRService
+open Microsoft.Azure.WebJobs.Extensions.Http
 
-
-let [<Literal>]WebSocketChannelPath = "/socket/poker"
-
-let createPokerApiFromContext (httpContext: HttpContext) : IPokerApi = 
-    let todoStore = httpContext.GetService<GameEngine>()
-    let iSocketHub = httpContext.GetService<ISocketHub>()
-    Api.pokerApi todoStore iSocketHub WebSocketChannelPath
-
-
-let webApp : HttpHandler = 
+let private webApp pokerApi : HttpHandler = 
     Remoting.createApi()
-    |> Remoting.withRouteBuilder Route.builder
-    |> Remoting.fromContext createPokerApiFromContext
+    |> Remoting.withRouteBuilder Route.functionBuilder
+    |> Remoting.fromValue pokerApi
     |> Remoting.buildHttpHandler
 
+let private func pokerApi log = azureFunction {
+    host_prefix "/api"
+    use_router (webApp pokerApi)
+    logger log
+}
 
-let channel =
-    channel {
-        join (fun ctx clientInfo ->
-            task {
-                printfn "Someone has connected!"
-                return Channels.Ok
-            }
-        )
-    }
 
-let configAi (logging:ILoggingBuilder) =
-    logging.ClearProviders()  |> ignore
-    logging.AddApplicationInsights() |> ignore
-    logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Trace) |> ignore
-    logging.AddConsole() |> ignore
-
-let configureServices (services: IServiceCollection) =
-    services.AddApplicationInsightsTelemetry() |> ignore
-    
-    let gameEngineFactory (sp:IServiceProvider) =
-        let logger = sp.GetService<ILogger<GameEngine>>()
+let private gameEngineFactory (logger:ILogger) =
+    let log (str:string) = 
+        logger.LogInformation(str)
         
-        let log (str:string) = 
-            logger.LogInformation(str)
+    // use the same storage as the function itself
+    let connectionStr = 
+        System.Environment.GetEnvironmentVariable("AzureWebJobsStorage", EnvironmentVariableTarget.Process)
 
-        let configuration = sp.GetService<IConfiguration>()
+    let dbRepo = DataAccess.initGameRepository connectionStr
 
-        let connectionStr = configuration.GetValue("TableStorageConnectionString")
-
-        let dbRepo = DataAccess.initGameRepository connectionStr
-
-        GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
-
-    services.AddSingleton<GameEngine>(gameEngineFactory)
+    GameEngineFunction(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
 
 
-let app =
-    application {
-        url "http://0.0.0.0:8085"
-        use_router webApp
-        memory_cache
-        use_static "public"
-        use_json_serializer (Thoth.Json.Giraffe.ThothSerializer())
-        use_gzip
-        service_config configureServices
-        logging configAi
-        add_channel WebSocketChannelPath channel
-    }
 
-run app
+[<FunctionName("negotiate")>]
+let negotiate(
+    [<HttpTrigger(AuthorizationLevel.Anonymous)>]req: HttpRequest,
+    [<SignalRConnectionInfo(HubName = "poker", UserId="{headers.x-ms-signalr-userid}")>]connectionInfo: SignalRConnectionInfo) : SignalRConnectionInfo =
+    connectionInfo
+
+
+[<FunctionName("PokerEndpoint")>]
+let pokerEndpoint (
+    [<HttpTrigger(AuthorizationLevel.Anonymous, Route = "{*any}")>]req: HttpRequest, 
+    [<SignalR(HubName = Shared.SignalR.hubName)>] signalRMessages:IAsyncCollector<SignalRMessage>,
+    log: ILogger) =
+    let gameEngine = gameEngineFactory log
+    let pokerApi = Api.pokerApi gameEngine signalRMessages
+    func pokerApi log req
+
+
+

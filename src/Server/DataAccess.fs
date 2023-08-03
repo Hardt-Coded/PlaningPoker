@@ -101,9 +101,13 @@
     
 
 
-    let initGameRepository connectionString =
+    let initGameRepository (connectionString: string) =
         let tableName = "PokerGames"
-        let account = CloudStorageAccount.Parse connectionString //Or your connection string here
+        let account = 
+            if (connectionString.Contains("UseDevelopmentStorage")) then
+                CloudStorageAccount.DevelopmentStorageAccount
+            else
+                CloudStorageAccount.Parse connectionString
         let tableClient = account.CreateCloudTableClient()
         let table = tableClient.GetTableReference(tableName)
         table.CreateIfNotExists() |> ignore

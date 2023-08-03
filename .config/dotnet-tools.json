@@ -9,7 +9,7 @@
       ]
     },
     "fable": {
-      "version": "3.2.3",
+      "version": "3.6.1",
       "commands": [
         "fable"
       ]

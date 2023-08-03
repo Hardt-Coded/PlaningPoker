@@ -44,8 +44,8 @@
         | Some currentPlayer, InGame state , PlayCard card when state.State = InRound ->
             state |> playCard currentPlayer card
 
-        | Some currentPlayer, InGame state , PlayCard _ ->
-            "You can only play a card, when you are playing a round" |> Error
+        | Some currentPlayer, _ , PlayCard _ ->
+            state |> Ok
 
         | cp, state, msg ->
             $"The Message '{msg}' from the player '{cp}' is not allowed in the current Game state '{state}'!" |> Error
@@ -122,127 +122,79 @@
         }
         InGame newState |> Ok
 
-
-    type GameEngineMsg = 
-        | GameEngineMsg of game:GameId option * player:Player option * msg:Msg * AsyncReplyChannel<Result<GameModel,string>>
-        | GetState of game:GameId * AsyncReplyChannel<Result<GameModel,string>>
-
-
-
     type GameState = (GameId * GameModel)
 
-
-    type GameEngine(log:string->unit, 
+    type GameEngineFunction(log:string->unit, 
         getGameState: GameId-> Async<GameState option>, 
         addGameState: GameState -> Async<unit>,
         updateGameState: GameState -> Async<unit>,
         deleteGameState: GameId -> Async<unit>) =
 
+        let processGameMsg gameId player msg =
+            async {
+                let! currentGameState = getGameState gameId
+                match currentGameState with
+                | None ->
+                    return Error "Game doesn't exists"
+                | Some (currentGame, currentGameState) ->
+                    let stateResult = update player msg currentGameState
+                    match stateResult with
+                    | Ok (GameEnded _) ->
+                        do! deleteGameState gameId
+                        return stateResult
 
-        let getLogString (gameStates:GameState list) =
-            let join (sep:string) (sl:string array) = System.String.Join (sep,sl)
-            gameStates
-            |> List.map (fun (g,_) -> $"%A{g}")
-            |> List.toArray
-            |> join "\r\n"
-
-
-        let mailBox = 
-            MailboxProcessor<GameEngineMsg>.Start(
-                fun inbox -> 
-                    let rec loop () =
-                        async {
-                            let! msg = inbox.Receive()
-                            match msg with 
-                            | GetState (gameId, replyChannel) ->
-                                let! state = getGameState gameId 
-                                match state with
-                                | Some (_,state) ->
-                                    replyChannel.Reply <| Ok state
-                                | None ->
-                                    replyChannel.Reply <| Error "No gamestate found!"
-                                return! loop ()
-
-                            | GameEngineMsg (gameId, player, msg, replyChannel) ->
-                                
-                                match gameId with
-                                | None ->
-                                    let initState = Init
-                                    let stateResult = update player msg initState
-                                    replyChannel.Reply stateResult
-
-                                    match stateResult with
-                                    | Ok newState ->
-                                        match newState with
-                                        | GameModel.GotGameId gameId ->
-                                            do! addGameState (gameId, newState)
-                                            log ($"game added: %A{gameId}")
-                                            return! loop ()
-                                        | _ ->
-                                            replyChannel.Reply (Error "No GameId found!")
-                                            return! loop ()
-                                    | Error e ->
-                                        log ($"Error: Create NewGame - {e}")
-                                        return! loop ()
-
-                                | Some gameId ->
-                                    let! currentGameState = getGameState gameId
-                                    match currentGameState with
-                                    | None ->
-                                        replyChannel.Reply <| Error "Game doesn't exists"
-                                        return! loop ()
-
-                                    | Some (currentGame, currentGameState) ->
-                                        let stateResult = update player msg currentGameState
-                                        replyChannel.Reply stateResult
-
-                                        // in case of end game remove state
-                                        match stateResult with
-                                        | Ok (GameEnded _) ->
-                                            do! deleteGameState gameId
-                                            log ($"game removed: %A{currentGame}")
-
-                                            return! loop ()
-
-                                        | Ok newState ->
-                                            do! updateGameState (currentGame, newState)
-                                            return! loop ()
-                                        | Error e ->
-                                            log ($"Error: %A{currentGame} - {e}")
-                                            return! loop ()
-                                        
-                                
-                                        
-                            }
-
-                    loop ()
-        )
-
-
-        let postMsg game player msg =
-            mailBox.PostAndAsyncReply(fun reply -> GameEngineMsg (game, player, msg, reply))
-
+                    | Ok newState ->
+                        do! updateGameState (currentGame, newState)
+                        return stateResult
+                    | Error e ->
+                        log ($"Error: %A{currentGame} - {e}")
+                        return Error e
+            }
 
         member __.CreateGame admin =
-            postMsg None (Some admin) (CreateGame admin)
+            async {
+                let initState = Init
+                let stateResult = update (Some admin) (CreateGame admin) initState
+                match stateResult with
+                | Ok newState ->
+                    match newState with
+                    | GameModel.GotGameId gameId ->
+                        do! addGameState (gameId, newState)
+                        log ($"game added: %A{gameId}")
+                        return Ok newState
+                    | _ ->
+                        return Error "No GameId found!"
+                        
+                | Error e ->
+                    log ($"Error: Create NewGame - {e}")
+                    return Error e
+            }
 
-        member __.EndGame game currentPlayer =
-            postMsg (Some game) (Some currentPlayer) (EndGame)
+        member __.EndGame gameId currentPlayer =
+            processGameMsg gameId (Some currentPlayer) (EndGame)
 
-        member __.JoinGame game currentPlayer =
-            postMsg (Some game) None (JoinGame currentPlayer)
+        member __.JoinGame gameId currentPlayer =
+            processGameMsg gameId None (JoinGame currentPlayer)
 
-        member __.LeaveGame game currentPlayer player =
-            postMsg (Some game) (Some currentPlayer) (LeaveGame player)
+        member __.LeaveGame gameId currentPlayer player =
+            processGameMsg gameId (Some currentPlayer) (LeaveGame player)
 
-        member __.StartRound game currentPlayer =
-            postMsg (Some game) (Some currentPlayer) StartRound
+        member __.StartRound gameId currentPlayer =
+            processGameMsg gameId (Some currentPlayer) StartRound
 
-        member __.FinishRound game currentPlayer =
-            postMsg (Some game) (Some currentPlayer) FinishRound
+        member __.FinishRound gameId currentPlayer =
+            processGameMsg gameId (Some currentPlayer) FinishRound
 
-        member __.PlayCard game currentPlayer card =
-            postMsg (Some game) (Some currentPlayer) (PlayCard card)
+        member __.PlayCard gameId currentPlayer card =
+            processGameMsg gameId (Some currentPlayer) (PlayCard card)
 
-        member __.GetState game =
-            mailBox.PostAndAsyncReply(fun reply -> GetState (game, reply))
+        member __.GetState gameId =
+            async {
+                let! state = getGameState gameId 
+                match state with
+                | Some (_,state) ->
+                    return Ok state
+                | None ->
+                    return Error "No gamestate found!"
+            }
+            

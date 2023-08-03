@@ -390,18 +390,20 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
 
                             Mui.table [
                                 Mui.tableHead [
-                                    Mui.tableCell "1"
-                                    Mui.tableCell "2"
-                                    Mui.tableCell "3"
-                                    Mui.tableCell "5"
-                                    Mui.tableCell "8"
-                                    Mui.tableCell "13"
-                                    Mui.tableCell "20"
-                                    Mui.tableCell "40"
-                                    Mui.tableCell "100"
-                                    Mui.tableCell "Stop"
-                                    Mui.tableCell "Coffee"
-                                    Mui.tableCell "WTF?"
+                                    Mui.tableRow [
+                                        Mui.tableCell "1"
+                                        Mui.tableCell "2"
+                                        Mui.tableCell "3"
+                                        Mui.tableCell "5"
+                                        Mui.tableCell "8"
+                                        Mui.tableCell "13"
+                                        Mui.tableCell "20"
+                                        Mui.tableCell "40"
+                                        Mui.tableCell "100"
+                                        Mui.tableCell "Stop"
+                                        Mui.tableCell "Coffee"
+                                        Mui.tableCell "WTF?"
+                                    ]
                                 ]
                                 Mui.tableBody [
 
@@ -521,7 +523,6 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch
 
 
 let view state dispatch =
-    Browser.Dom.console.log ($"%A{state}")
     let classes = useStyles ()
     React.router [
         router.onUrlChanged (UrlChanged >> dispatch)

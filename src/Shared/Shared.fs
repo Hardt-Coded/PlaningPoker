@@ -173,6 +173,8 @@ module Domain =
 module Route =
     let builder = sprintf "/api/%s/%s"
 
+    let functionBuilder = sprintf "/%s/%s"
+
 
 module Api =
 
@@ -190,6 +192,11 @@ module Api =
             finishRound : GameId -> Player -> Result<GameModel,string> Async 
             playCard    : GameId -> Player -> Card -> Result<GameModel,string> Async 
         }
+
+
+module SignalR =
+
+    let [<Literal>] hubName = "poker"
 
     
     

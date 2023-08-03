@@ -46,7 +46,6 @@ let init isDarkMode =
 
 
 let update (msg:Models.Msg) state =
-    Browser.Dom.console.log ($"%A{msg}")
     match state.View, msg with
     | _, Reset ->
         {
@@ -67,13 +66,13 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameCreated (player,gameId,gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
                 Cmd.ofMsg <| OnMessage ("Share the Link", "In order to add new players, please share the link from your browser address with the others.")
@@ -96,13 +95,13 @@ let update (msg:Models.Msg) state =
     | JoinGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
             ]
@@ -112,13 +111,13 @@ let update (msg:Models.Msg) state =
     | CreateGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
             CurrentPlayer = player 
-            WebSocket = None
+            SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
         let cmds = 
             Cmd.batch [
-                Cmd.ofMsg <| ConnectToWebSocket gameId
+                Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
             ]
@@ -148,7 +147,7 @@ let update (msg:Models.Msg) state =
                 // Disconnect from the WebSocket, so you don't get any refreshed.
                 // also reset the state
                 if (viewState.CurrentPlayer = playerToLeave) then
-                    Cmd.ofMsg DisconnectWebSocket
+                    Cmd.ofMsg DisconnectSignalR
                     Cmd.ofMsg Reset
             ]
             Cmd.batch cmds
@@ -171,10 +170,25 @@ let update (msg:Models.Msg) state =
         | GameEnded gameId -> // game was ended by admin
             let cmds = 
                 [
-                    Cmd.ofMsg DisconnectWebSocket
+                    Cmd.ofMsg DisconnectSignalR
                     Cmd.ofMsg Reset
                 ] |> Cmd.batch
             state, cmds
+        | InGame inGameModel ->
+            let didYouExistAnyMore = inGameModel.Players |> List.exists (fun p -> p = viewState.CurrentPlayer)
+            if didYouExistAnyMore then
+                let newViewState = { viewState with CurrentGameState = gameModel }
+                { state with View = InGameView newViewState; Error = "" }, Cmd.none
+            else
+                // reset game and disconnect from signalR
+                let cmd =
+                    let cmds = [
+                            Cmd.ofMsg DisconnectSignalR
+                            Cmd.ofMsg Reset
+                    ]
+                    Cmd.batch cmds
+                state, cmd
+                
         | _ ->
             let newViewState = { viewState with CurrentGameState = gameModel }
             { state with View = InGameView newViewState; Error = "" }, Cmd.none
@@ -182,22 +196,16 @@ let update (msg:Models.Msg) state =
     // if the Gamestate comes over the web socket and if you not anymore in the game. Nobody cares.
     | _, SetCurrentGameState gameModel ->
         state, Cmd.none
-
-    | InGameView viewState, ConnectToWebSocket gameId ->
-        state, Commands.WebSocket.connectWebSocketCmd gameId
-    | InGameView viewState, SetWebSocketHandler ws ->
-        let newViewState = { viewState with WebSocket = Some ws }
-        { state with View = InGameView newViewState },Cmd.none
-    | InGameView viewState, DisconnectWebSocket ->
-        let cmd = 
-            match viewState.WebSocket with
-            | None ->
-                Cmd.none
-            | Some ws ->
-                Commands.WebSocket.disconnectWebsocket ws
-        state,cmd
-    | _, WebSocketDisconnected ->
-        state, Cmd.ofMsg Reset
+    | InGameView viewState, ConnectToSignalR gameId ->
+        state, Commands.SignalR.connectSignalRCmd gameId
+    | InGameView viewState, SignalRConnected connection ->
+        { state with View = InGameView { viewState with SignalRConnection = Some connection }},Cmd.none
+    | InGameView viewState, DisconnectSignalR ->
+        state,Commands.SignalR.disconnectSignalRCmd viewState.SignalRConnection
+    | InGameView viewState, SignalRDisconnected ->
+        { state with View = InGameView { viewState with SignalRConnection = None }},Cmd.none
+    | _, SignalRDisconnected ->
+        state, Cmd.none
     | _, OnError error ->
         { state with Error = error }, Cmd.none
     | _, OnMessage (title,error) ->

@@ -7,11 +7,121 @@ open Shared.Api
 open Shared.Domain
 open Models
 open Elmish
+open SignalRHelper
+open Fable.Core
+
+
+
+
+[<Global>]
+let pokerBaseUrl:string = jsNative
 
 let pokerApi =
     Remoting.createApi()
+    |> Remoting.withBaseUrl pokerBaseUrl
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.buildProxy<IPokerApi>
+
+
+[<RequireQualifiedAccess>]
+module SignalR =
+
+    open Fable.Core
+    open Fable.SimpleHttp
+    open Fable.SimpleJson
+
+    type SignalRConnectionInfo = {
+        url:string
+        accessToken:string
+    }        
+
+    let private getConnectionInfo (gameId:string) =
+        async {
+            let url = $"{pokerBaseUrl}/api/negotiate?username={gameId}&hubname={Shared.SignalR.hubName}"
+
+            let! respo = 
+                Http.request url
+                |> Http.method HttpMethod.GET
+                |> Http.header (Header.Header ("x-ms-signalr-userid", gameId))
+                |> Http.send
+            
+            match respo.statusCode with
+            | 200 -> 
+                Fable.Core.JS.console.log ("signalr negotiated!")
+                let content = Json.parseAs<SignalRConnectionInfo> respo.responseText         
+                return content
+            | _ -> 
+                return failwith ("error getting signalr service info")
+        }
+
+
+    open Fable.Core.JsInterop
+
+    let private openSignalRConnection (info:SignalRConnectionInfo) onNewState =
+        async {
+            
+            Fable.Core.JS.console.log ("signalr init connection!")
+
+            let connection =
+                SignalRHelper.signalR.CreateHubConnectionBuilder()
+                    .withUrl(info.url, !!{| accessTokenFactory = (fun () -> info.accessToken) |})
+                    .build()
+            
+            connection.on("newState",(fun (data:obj) -> onNewState data))
+
+            Fable.Core.JS.console.log ("signalr connecting!")
+            do! connection.start() |> Async.AwaitPromise
+            Fable.Core.JS.console.log ("signalr connected!")
+
+            return connection
+        }
+
+
+
+    let connectSignalRCmd gameId =
+        fun dispatch ->
+            async {
+                try
+                    let gameId = gameId |> GameId.extract
+                    let! info = getConnectionInfo gameId
+                    let! connection = openSignalRConnection info (fun data -> 
+                        let payload = Json.parseAs<{| GameId:GameId; GameModel:GameModel |}> (data |> string)
+                        let incommingGameId = payload.GameId |> GameId.extract
+                        if (gameId <> incommingGameId) then
+                            ()
+                        else
+                            dispatch <| SetCurrentGameState payload.GameModel
+                    )
+                    dispatch <| SignalRConnected connection
+                with
+                | _ as ex ->
+                    dispatch (OnError ex.Message)
+                    raise ex
+    
+            } |> Async.StartImmediate
+            
+        |> Cmd.ofSub
+
+
+    let disconnectSignalRCmd (connection:IHubConnection option) =
+        fun dispatch ->
+            async {
+                try
+                    match connection with
+                    | None ->
+                        ()
+                    | Some connection ->
+                        connection.off("newState")
+                        do! connection.stop() |> Async.AwaitPromise
+                        dispatch <| SignalRDisconnected
+                with
+                | _ as ex ->
+                    dispatch (OnError ex.Message)
+                    raise ex
+    
+            } |> Async.StartImmediate
+        
+        |> Cmd.ofSub
 
 
 let private sendCommandWithSucceed f succeedDispatch =
@@ -196,7 +306,6 @@ let removeCookies () =
 module WebSocket =
 
     open Browser.Types
-    open Browser.WebSocket
     open Fable.SimpleJson
     
 
@@ -205,48 +314,13 @@ module WebSocket =
 
     let connectWebSocketCmd (gameId:GameId) =
         fun dispatch ->
-            let onWebSocketMessage (msg:MessageEvent) =
-                let msg = msg.data |> string |> Json.parseAs<ChannelMessage>
-                let id = GameId.extract gameId
-                if (id = msg.Topic) then
-                    msg.Payload |> Json.parseAs<GameModel> |> SetCurrentGameState |> dispatch
-                else
-                    ()
-
-            let rec connect ws : WebSocket =
-                let host = Browser.Dom.window.location.host
-                let pref = if Browser.Dom.window.location.protocol = "https:" then "wss" else "ws"
-                let url = $"{pref}://{host}/socket/poker"
-                let ws =
-                    match ws with
-                    | None ->
-                        WebSocket.Create(url)
-                    | Some ws -> ws
-
-                ws.onopen <- (fun _ -> printfn "connection opened!")
-                ws.onclose <- (fun e ->
-                    printfn "connection closed!"
-                    // code 42 (I will actually close the connection)
-                    if (e.code <> 4999) then
-                        promise {
-                            do! Promise.sleep 2000
-                            connect (Some ws) |> ignore
-                        }
-                    else
-                        promise { return (); }
-                )
-                ws.onmessage <- onWebSocketMessage
-                ws
-
-            let ws = connect None
-            dispatch <| SetWebSocketHandler ws
+            ()
 
 
         |> Cmd.ofSub
 
 
-    let disconnectWebsocket (ws:WebSocket) =
-        fun dispatch ->
-            ws.onclose <- (fun _ -> dispatch WebSocketDisconnected)
-            ws.close()
-        |> Cmd.ofSub
+    //let disconnectWebsocket (ws:WebSocket) =
+    //    fun dispatch ->
+    //        ()
+    //    |> Cmd.ofSub

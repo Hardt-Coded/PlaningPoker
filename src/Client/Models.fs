@@ -8,12 +8,13 @@
 
 
     open Browser.Types
+    open SignalRHelper
 
     
 
     type InGameArgs = {
         CurrentPlayer: Player; 
-        WebSocket: WebSocket option; 
+        SignalRConnection: IHubConnection option; 
         GameId: GameId; 
         CurrentGameState: GameModel
     }
@@ -43,10 +44,10 @@
         | ChangeId of string
         | LoadState
         | SetCurrentGameState of GameModel
-        | ConnectToWebSocket of GameId
-        | SetWebSocketHandler of WebSocket
-        | DisconnectWebSocket
-        | WebSocketDisconnected
+        | ConnectToSignalR of GameId
+        | SignalRConnected of IHubConnection
+        | DisconnectSignalR
+        | SignalRDisconnected
         | OnError of string
         | OnMessage of title:string * message:string
         | ClearError
