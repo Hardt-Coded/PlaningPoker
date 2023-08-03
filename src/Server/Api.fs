@@ -31,7 +31,7 @@ let private forwardResultViaSignalR (signalRMessages:IAsyncCollector<SignalRMess
     }
     
 
-let pokerApi (gameEngine:GameEngine) (signalRMessages:IAsyncCollector<SignalRMessage>) : IPokerApi = {
+let pokerApi (gameEngine:GameEngineFunction) (signalRMessages:IAsyncCollector<SignalRMessage>) : IPokerApi = {
     getState    = fun id -> 
         async { return! gameEngine.GetState id }
     createGame  = fun admin -> 

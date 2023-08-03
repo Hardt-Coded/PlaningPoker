@@ -1,78 +1,14 @@
 module Server
 
 open Giraffe
-open Saturn
-
 open Shared
-open Microsoft.Extensions.DependencyInjection
 open Domain
 open Fable.Remoting.Giraffe
 open Fable.Remoting.Server
 open Microsoft.AspNetCore.Http
-open Shared.Api
-open FSharp.Control.Tasks
-open Saturn.Channels
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Configuration
 open System
 open Microsoft.ApplicationInsights
-open Microsoft.Extensions.Logging.ApplicationInsights
-open Saturn
-
-
-//let [<Literal>]WebSocketChannelPath = "/socket/poker"
-
-//let createPokerApiFromContext (httpContext: HttpContext) : IPokerApi = 
-//    let todoStore = httpContext.GetService<GameEngine>()
-//    let iSocketHub = httpContext.GetService<ISocketHub>()
-//    Api.pokerApi todoStore iSocketHub WebSocketChannelPath
-
-
-//let webApp : HttpHandler = 
-//    Remoting.createApi()
-//    |> Remoting.withRouteBuilder Route.builder
-//    |> Remoting.fromContext createPokerApiFromContext
-//    |> Remoting.buildHttpHandler
-
-
-//let channel =
-//    channel {
-//        join (fun ctx clientInfo ->
-//            task {
-//                printfn "Someone has connected!"
-//                return Channels.Ok
-//            }
-//        )
-//    }
-
-//let configAi (logging:ILoggingBuilder) =
-//    logging.ClearProviders()  |> ignore
-//    logging.AddApplicationInsights() |> ignore
-//    logging.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Trace) |> ignore
-//    logging.AddConsole() |> ignore
-
-//let configureServices (services: IServiceCollection) =
-//    services.AddApplicationInsightsTelemetry() |> ignore
-    
-//    let gameEngineFactory (sp:IServiceProvider) =
-//        let logger = sp.GetService<ILogger<GameEngine>>()
-        
-//        let log (str:string) = 
-//            logger.LogInformation(str)
-
-//        let configuration = sp.GetService<IConfiguration>()
-
-//        let connectionStr = configuration.GetValue("TableStorageConnectionString")
-
-//        let dbRepo = DataAccess.initGameRepository connectionStr
-
-//        GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
-
-//    services.AddSingleton<GameEngine>(gameEngineFactory)
-
-
-
-open Saturn
 open Saturn.AzureFunctions
 open Microsoft.Azure.WebJobs
 open Microsoft.Azure.WebJobs.Extensions.SignalRService
@@ -101,7 +37,7 @@ let private gameEngineFactory (logger:ILogger) =
 
     let dbRepo = DataAccess.initGameRepository connectionStr
 
-    GameEngine(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
+    GameEngineFunction(log, dbRepo.getGameState, dbRepo.addGameState, dbRepo.updateGameState, dbRepo.deleteGameState)
 
 
 
