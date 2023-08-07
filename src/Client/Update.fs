@@ -20,22 +20,22 @@ let init isDarkMode =
         Message = "",""
         Theme = if isDarkMode then Dark else Light
         IsLoading = false
-        View = 
+        View =
             if id = "" then
                 CreateGameView {| Name = "" |}
             else
                 JoinGameView {| Name = ""; Id = id |}
     }
-    
+
     let gameId = Cookies.getGameId ()
     let cmdResult =
         result {
             let! gameIdFromCookies = (Cookies.getGameId(),"")
             let! gameIdFromUrlId = GameId.create id
             if (gameIdFromCookies<>gameIdFromUrlId) then
-                return Commands.resetWhenGameNotExists gameIdFromUrlId
+                return [ Commands.resetWhenGameNotExists gameIdFromUrlId ]
             else
-                return Commands.joinGameFromCookiesOrCheckGameExisits ()
+                return [ Commands.joinGameFromCookiesOrCheckGameExisits () ]
         }
     match cmdResult with
     | Ok cmd ->
@@ -54,23 +54,23 @@ let update (msg:Models.Msg) state =
             Theme = state.Theme
             IsLoading = false
             View = CreateGameView {| Name = "" |}
-        }, Cmd.batch [ Commands.removeCookies (); Cmd.ofMsg (Navigate [ "" ])]
+        }, Cmd.batch [  [ Commands.removeCookies () ]; Cmd.ofMsg (Navigate [ "" ]) ]
     | CreateGameView viewState, CreateGame ->
         let player = Player.create viewState.Name
         match player with
         | Error e ->
             state, Cmd.ofMsg <| OnError e
         | Ok player ->
-            state, Commands.createGame player
+            state, [ Commands.createGame player ]
 
     | CreateGameView _, GameCreated (player,gameId,gameState) ->
         let view = InGameView {
-            CurrentPlayer = player 
+            CurrentPlayer = player
             SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
-        let cmds = 
+        let cmds =
             Cmd.batch [
                 Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
@@ -84,7 +84,7 @@ let update (msg:Models.Msg) state =
             result {
                 let! player = Player.create viewState.Name
                 let! gameId = GameId.create viewState.Id
-                return Commands.joinGame gameId player
+                return [ Commands.joinGame gameId player ]
             }
         match cmdResult with
         | Error e ->
@@ -94,12 +94,12 @@ let update (msg:Models.Msg) state =
 
     | JoinGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
-            CurrentPlayer = player 
+            CurrentPlayer = player
             SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
-        let cmds = 
+        let cmds =
             Cmd.batch [
                 Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
@@ -110,19 +110,19 @@ let update (msg:Models.Msg) state =
     // in case of cookie joining!
     | CreateGameView _, GameJoined (player, gameId, gameState) ->
         let view = InGameView {
-            CurrentPlayer = player 
+            CurrentPlayer = player
             SignalRConnection = None
             GameId = gameId
             CurrentGameState = gameState
         }
-        let cmds = 
+        let cmds =
             Cmd.batch [
                 Cmd.ofMsg <| ConnectToSignalR gameId
                 Cmd.ofMsg <| SetCookies
                 Cmd.ofMsg <| Navigate [ GameId.extract gameId ]
             ]
         { state with View = view }, cmds
-    
+
 
     | CreateGameView viewState, ChangeName name ->
         let newViewState = {| viewState with Name = name |}
@@ -135,15 +135,15 @@ let update (msg:Models.Msg) state =
         { state with View = JoinGameView newViewState }, Cmd.none
 
     | InGameView viewState, GameMsg (StartRound) ->
-        state, Commands.startRound viewState.GameId viewState.CurrentPlayer
+        state, [ Commands.startRound viewState.GameId viewState.CurrentPlayer ]
 
     | InGameView viewState, GameMsg (FinishRound) ->
-        state, Commands.finishRound viewState.GameId viewState.CurrentPlayer
-        
+        state, [ Commands.finishRound viewState.GameId viewState.CurrentPlayer ]
+
     | InGameView viewState, GameMsg (LeaveGame playerToLeave) ->
         let cmd =
             let cmds = [
-                Commands.leaveGame viewState.GameId viewState.CurrentPlayer playerToLeave
+                [ Commands.leaveGame viewState.GameId viewState.CurrentPlayer playerToLeave ]
                 // Disconnect from the WebSocket, so you don't get any refreshed.
                 // also reset the state
                 if (viewState.CurrentPlayer = playerToLeave) then
@@ -151,24 +151,24 @@ let update (msg:Models.Msg) state =
                     Cmd.ofMsg Reset
             ]
             Cmd.batch cmds
-            
+
         state, cmd
 
     | InGameView viewState, GameMsg (EndGame) ->
-        state, Commands.endGame viewState.GameId viewState.CurrentPlayer
-        
+        state, [ Commands.endGame viewState.GameId viewState.CurrentPlayer ]
+
     | InGameView viewState, GameMsg (PlayCard card) ->
-        state, Commands.playCard viewState.GameId viewState.CurrentPlayer card
-        
+        state, [ Commands.playCard viewState.GameId viewState.CurrentPlayer card ]
+
     | InGameView viewState, GameMsg _ ->
         state, Cmd.none
-    
+
     | InGameView viewState, LoadState ->
-        state, Commands.loadState viewState.GameId
+        state, [Commands.loadState viewState.GameId ]
     | InGameView viewState, SetCurrentGameState gameModel ->
         match gameModel with
         | GameEnded gameId -> // game was ended by admin
-            let cmds = 
+            let cmds =
                 [
                     Cmd.ofMsg DisconnectSignalR
                     Cmd.ofMsg Reset
@@ -188,7 +188,7 @@ let update (msg:Models.Msg) state =
                     ]
                     Cmd.batch cmds
                 state, cmd
-                
+
         | _ ->
             let newViewState = { viewState with CurrentGameState = gameModel }
             { state with View = InGameView newViewState; Error = "" }, Cmd.none
@@ -197,13 +197,13 @@ let update (msg:Models.Msg) state =
     | _, SetCurrentGameState gameModel ->
         state, Cmd.none
     | InGameView viewState, ConnectToSignalR gameId ->
-        state, Commands.SignalR.connectSignalRCmd gameId
+        state, [ Commands.SignalR.connectSignalRCmd gameId ]
     | InGameView viewState, SignalRConnected connection ->
-        { state with View = InGameView { viewState with SignalRConnection = Some connection }},Cmd.none
+        { state with View = InGameView { viewState with SignalRConnection = Some connection }}, []
     | InGameView viewState, DisconnectSignalR ->
-        state,Commands.SignalR.disconnectSignalRCmd viewState.SignalRConnection
+        state, [ Commands.SignalR.disconnectSignalRCmd viewState.SignalRConnection ]
     | InGameView viewState, SignalRDisconnected ->
-        { state with View = InGameView { viewState with SignalRConnection = None }},Cmd.none
+        { state with View = InGameView { viewState with SignalRConnection = None }}, []
     | _, SignalRDisconnected ->
         state, Cmd.none
     | _, OnError error ->
@@ -215,7 +215,7 @@ let update (msg:Models.Msg) state =
     | _, ClearMessage ->
         { state with Message = ("","") }, Cmd.none
     | _, ToggleTheme ->
-        let newTheme = 
+        let newTheme =
             match state.Theme with
             | Dark -> Light
             | Light -> Dark
@@ -225,11 +225,11 @@ let update (msg:Models.Msg) state =
     | _, Navigate segments ->
         match segments with
         | [ id ] ->
-            state, Cmd.ofSub (fun _ -> Router.navigate (segments,[]))
+            state, [ (fun _ -> Router.navigate (segments,[])) ]
         | _ ->
             state, Cmd.none
     | InGameView viewState, SetCookies ->
-        state, Commands.setCookies viewState.GameId viewState.CurrentPlayer
+        state, [ Commands.setCookies viewState.GameId viewState.CurrentPlayer ]
     | CreateGameView cv, UrlChanged currentUrl ->
         match currentUrl with
         | [ id ] ->

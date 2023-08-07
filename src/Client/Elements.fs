@@ -14,7 +14,7 @@ let joinLink (gameid:GameId) =
         prop.href linkAddress
         link.variant "h6"
         link.children "Join Link"
-        
+
     ]
 
 
@@ -28,55 +28,55 @@ let toolbar theme currentPlayer (gameId:GameId option) dispatch =
             let (_,name) = Player.extract player
             $" - Welcome {name}!"
 
-    Mui.toolbar [ 
-        Mui.typography [ 
+    Mui.toolbar [
+        Mui.typography [
             typography.variant.h6
             typography.color.inherit'
             typography.children $"F#ncy Planing Poker{welcomeText}"
-            typography.classes.root c.appBarTitle 
+            typography.classes.root c.appBarTitle
         ]
 
         match gameId with
         | None -> ()
         | Some gameId ->
             joinLink gameId
-        
-        
 
-        
+
+
+
 
         //Light/dark mode button
-        Mui.tooltip [ 
+        Mui.tooltip [
             tooltip.title (
                 match theme with
                 | Light -> "Using light theme"
                 | Dark -> "Using dark theme"
             )
             tooltip.children (
-                Mui.iconButton [ 
+                Mui.iconButton [
                     prop.onClick (fun _ -> dispatch ToggleTheme)
                     iconButton.color.inherit'
-                    iconButton.children [ 
+                    iconButton.children [
                         match theme with
                         | Light -> brightness7Icon []
-                        | Dark -> brightness4Icon [] 
-                    ] 
+                        | Dark -> brightness4Icon []
+                    ]
                 ]
-            ) 
+            )
         ]
 
         // GitHub button
-        Mui.tooltip [ 
+        Mui.tooltip [
             tooltip.title "F#ncy Planing Poker on GitHub"
             tooltip.children (
-                Mui.iconButton [ 
+                Mui.iconButton [
                     prop.href "https://github.com/DieselMeister/PlaningPoker"
                     iconButton.component' "a"
                     iconButton.color.inherit'
-                    iconButton.children (gitHubIcon []) 
+                    iconButton.children (gitHubIcon [])
                 ]
-            ) 
-        ] 
+            )
+        ]
     ]
 
 
@@ -89,14 +89,14 @@ let loadingSpinner isVisible =
                 circularProgress.color.inherit'
             ]
         ]
-        
+
     ]
 
 let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
-let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
-    let pic = 
-        match value with
+let card sizeFactor isOpen (onClick:unit->unit) (input:CardValue) =
+    let pic =
+        match input with
         | Zero      -> "spades"
         | Halve     -> "diams"
         | One       -> "hearts"
@@ -111,10 +111,11 @@ let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
         | Coffee    -> "diams"
         | Stop      -> "clubs"
         | IDontKnow -> "spades"
-        
+        | TrustMeBro -> "trustmebro"
 
-    let rank = 
-        match value with
+
+    let rank =
+        match input with
         | Zero      -> "a"
         | Halve     -> "a"
         | One       -> "a"
@@ -129,9 +130,10 @@ let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
         | Coffee    -> "a"
         | Stop      -> "a"
         | IDontKnow -> "a"
+        | TrustMeBro -> "trustmebro"
 
-    let value = 
-        match value with
+    let value =
+        match input with
         | Zero      -> "0"
         | Halve     -> "½"
         | One       -> "1"
@@ -146,8 +148,9 @@ let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
         | Coffee    -> "☕"
         | Stop      -> "🛑"
         | IDontKnow -> "WTF?"
-        
-    
+        | TrustMeBro -> "Trust Me Bro"
+
+
     let boxWidthFactor = 110.0 / 1.5
     let boxHeighFactor = 140.0 / 1.5
 
@@ -180,12 +183,13 @@ let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
                         Html.span [
                             prop.className "rank"
                             prop.text $"{value}"
-                                
+
                         ]
                         Html.span [
                             prop.className "suit"
-                            prop.dangerouslySetInnerHTML $"&{pic};"
-                                
+                            if input <> TrustMeBro then
+                                prop.dangerouslySetInnerHTML $"&{pic};"
+
                         ]
                     ]
                 ]
@@ -199,8 +203,8 @@ let card sizeFactor isOpen (onClick:unit->unit) (value:CardValue) =
                 ]
         ]
     ]
-    
-    
+
+
 
 
 

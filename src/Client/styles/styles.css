@@ -413,6 +413,7 @@ label.card {
 .card.rank-q .suit:after,
 .card.rank-k .suit:after,
 .card.rank-a .suit:after,
+.card.rank-trustmebro .suit:after,
 .card.joker .rank:after {
     font-family: Georgia, serif;
     position: absolute;
@@ -480,6 +481,9 @@ label.card {
     right: .3em;
 }
 
+
+
+
 /*____________ smaller cards for use inside text ____________*/
 
 .playingCards.inText .card {
@@ -511,6 +515,28 @@ label.card {
     padding: 0 .1em;
 }
 
+
+/* TRUST ME BRO */
+.playingCards.simpleCards .card.trustmebro .suit:after,
+.card.rank-trustmebro.trustmebro .suit:after {
+    content: "\1F91E";
+    right: .0em;
+    z-index: -1;
+}
+
+
+
+
+.card.rank-trustmebro span.rank {
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    word-wrap: break-word;
+    color: green;
+    margin-top: .2em;
+    margin-left: .2em;
+
+}
 
 /* hand (in your hand or on table or as a deck)
 ********************************************************************/
