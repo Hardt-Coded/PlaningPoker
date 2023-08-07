@@ -25,3 +25,5 @@ src/Shared/*.js
 /_ReSharper.Caches/**
 /src/Server/public
 /src/Client/.fable-build
+/publish/app-fe
+/src/Server/Properties/ServiceDependencies

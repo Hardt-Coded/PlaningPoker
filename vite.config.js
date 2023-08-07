@@ -18,9 +18,6 @@ export default defineConfig({
     build: {
         outDir: "../../publish/app-fe"
     },
-    define: {
-        global: {}
-    },
     optimizeDeps: {
 
     }

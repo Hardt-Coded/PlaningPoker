@@ -1,0 +1,34 @@
+{
+  "dependencies": {
+    "storage1": {
+      "restored": true,
+      "restoreTime": "2023-08-03T18:22:52.2344776Z"
+    },
+    "appInsights1": {
+      "restored": true,
+      "restoreTime": "2023-08-03T18:23:22.5809279Z"
+    }
+  },
+  "parameters": {
+    "storage1.resourceGroupName": {
+      "Name": "storage1.resourceGroupName",
+      "Type": "resourceGroup",
+      "Value": "planing-poker-function"
+    },
+    "storage1.subscriptionId": {
+      "Name": "storage1.subscriptionId",
+      "Type": "subscription",
+      "Value": "77d9206d-4aa9-4ebb-a46c-6859ab85a638"
+    },
+    "appInsights1.subscriptionId": {
+      "Name": "appInsights1.subscriptionId",
+      "Type": "subscription",
+      "Value": "77d9206d-4aa9-4ebb-a46c-6859ab85a638"
+    },
+    "appInsights1.resourceGroupName": {
+      "Name": "appInsights1.resourceGroupName",
+      "Type": "resourceGroup",
+      "Value": "planing-poker-function"
+    }
+  }
+}
