@@ -1,8 +1,9 @@
 module.exports = {
     content: [
-        './src/Client/.fable-build/**/*.{js,ts,jsx,tsx}',
+        './src/PlaningPoker.Client/index.html',
+        './src/PlaningPoker.Client/**/*.{fs,js,ts,jsx,tsx}'
     ],
     plugins: [
-
+        require('daisyui'),
     ]
 }

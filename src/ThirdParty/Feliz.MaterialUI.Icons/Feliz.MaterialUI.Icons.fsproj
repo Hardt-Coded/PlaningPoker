@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <VersionPrefix>5.13.7</VersionPrefix>
+    <VersionSuffix>alpha.6</VersionSuffix>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NpmDependencies>
+      <NpmPackage Name="@mui/icons-material" Version="gte 5.13 lt 6" ResolutionStrategy="max" />
+    </NpmDependencies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="MaterialIcons.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Fable.Core" Version="4.5.0" />
+    <PackageReference Include="Fable.React" Version="9.4.0" />
+    <PackageReference Include="Feliz" Version="2.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Add source files to "fable" folder in Nuget package -->
+    <Content Include="*.fsproj; **\*.fs; **\*.fsi" PackagePath="fable\" />
+  </ItemGroup>
+</Project>
