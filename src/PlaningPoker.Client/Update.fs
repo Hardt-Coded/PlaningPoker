@@ -27,6 +27,7 @@ let init isDarkMode =
                 CreateGameView {| Name = "" |}
             else
                 JoinGameView {| Name = ""; Id = id |}
+        CardRecentlySelected = false
     }
 
     let cmdResult =
@@ -56,6 +57,7 @@ let update (msg:Msg) state =
             Theme = state.Theme
             IsLoading = false
             View = CreateGameView {| Name = "" |}
+            CardRecentlySelected = false
         }, Cmd.batch [  [ Commands.removeCookies () ]; Cmd.ofMsg (Navigate [ "" ]) ]
 
     | CreateGameView viewState, CreateGame ->
@@ -176,7 +178,10 @@ let update (msg:Msg) state =
         state, [ Commands.sendMsgToServer viewState.GameId (Some viewState.CurrentPlayer) GameMsg.EndGame ]
 
     | InGameView viewState, GameMsg (PlayCard card) ->
-        state, [ Commands.sendMsgToServer viewState.GameId (Some viewState.CurrentPlayer) (GameMsg.PlayCard card) ]
+        { state with CardRecentlySelected = true }, [
+            Commands.sendMsgToServer viewState.GameId (Some viewState.CurrentPlayer) (GameMsg.PlayCard card)
+            Commands.resetSelectedCardFlag 2500
+        ]
 
     | InGameView viewState, GameMsg _ ->
         state, Cmd.none
@@ -261,6 +266,10 @@ let update (msg:Msg) state =
             state, Cmd.none
     | InGameView _, UrlChanged _ ->
         state, Cmd.none
+
+    | _, ResetCardRecentlySelectedFlag ->
+        { state with CardRecentlySelected = false }, Cmd.none
+
     | _ ->
         let msgStr = $"%A{msg}"
         let stateStr = $"%A{state}"

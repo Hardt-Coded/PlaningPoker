@@ -95,84 +95,51 @@ let loadingSpinner isVisible =
 
 let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
-let card sizeFactor isOpen (onClick:unit->unit) (input:CardValue) =
-    let pic =
-        match input with
-        | One       -> "./card1_transparent_small.png"
-        | Two       -> "./card2_transparent_small.png"
-        | Three     -> "./card3_transparent_small.png"
-        | Five      -> "./card5_transparent_small.png"
-        | Eight     -> "./card8_transparent_small.png"
-        | Thirteen  -> "./card13_transparent_small.png"
-        | Twenty    -> "./card20_transparent_small.png"
-        | Forty    ->  "./card40_transparent_small.png"
-        | Coffee    -> "./pause_transparent_small.png"
-        | Stop      -> "./stop_transparent_small.png"
-        | Wtf       -> "./wtf_transparent_small.png"
-        | TrustMeBro ->"./trustmebro_transparent_small.png"
-        | Observer ->  "./observer_transparent_small.png"
 
+let getImageFromCard input =
+    match input with
+    | One       -> "./card1_transparent_small.png"
+    | Two       -> "./card2_transparent_small.png"
+    | Three     -> "./card3_transparent_small.png"
+    | Five      -> "./card5_transparent_small.png"
+    | Eight     -> "./card8_transparent_small.png"
+    | Thirteen  -> "./card13_transparent_small.png"
+    | Twenty    -> "./card20_transparent_small.png"
+    | Forty    ->  "./card40_transparent_small.png"
+    | Coffee    -> "./pause_transparent_small.png"
+    | Stop      -> "./stop_transparent_small.png"
+    | Wtf       -> "./wtf_transparent_small.png"
+    | TrustMeBro ->"./trustmebro_transparent_small.png"
+    | Observer ->  "./observer_transparent_small.png"
 
-    let boxWidthFactor = 110.0 / 1.5
-    let boxHeighFactor = 140.0 / 1.5
+let card isOpen (onClick:unit->unit) (input:CardValue) =
+    let pic = getImageFromCard input
 
-    let boxWidth = (boxWidthFactor * sizeFactor) |> int
-    let boxHeight = (boxHeighFactor * sizeFactor) |> int
-
-
-    Html.div [
-        prop.style [
-            style.overflow.hidden
-            style.display.flex
-            style.alignItems.center
-            style.justifyContent.center
-            style.minHeight boxHeight
-            style.minWidth boxWidth
-            style.custom ("box-sizing","initial")
-        ]
-        prop.children [
-            if isOpen then
-                Html.div [
-                    prop.className $"card"
-                    prop.onClick (fun _ -> onClick())
-                    prop.style [
-                        style.custom ("boxSizing","initial")
-                        style.transform.scale sizeFactor
-                    ]
-                    prop.children [
-                        Html.div [
-                            Html.img [
-                                prop.src pic
-                                prop.style [
-                                    //style.width (length.percent 90)
-                                    style.height (length.percent 100)
-                                ]
-                            ]
+    if isOpen then
+        Html.div [
+            prop.className $"card"
+            prop.onClick (fun _ -> onClick())
+            prop.children [
+                    Html.img [
+                        prop.src pic
+                        prop.style [
+                            style.height (length.percent 100)
                         ]
                     ]
-                ]
-            else
-                Html.div [
-                    prop.className $"card"
-                    prop.onClick (fun _ -> onClick())
-                    prop.style [
-                        style.custom ("boxSizing","initial")
-                        style.transform.scale sizeFactor
-                    ]
-                    prop.children [
-                        Html.div [
-                            Html.img [
-                                prop.src "./card_back_transparent_small.png"
-                                prop.style [
-                                    //style.width (length.percent 90)
-                                    style.height (length.percent 100)
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
+            ]
         ]
-    ]
+    else
+        Html.div [
+            prop.className $"card"
+            prop.onClick (fun _ -> onClick())
+            prop.children [
+                Html.img [
+                    prop.src "./card_back_transparent_small.png"
+                    prop.style [
+                    ]
+                ]
+            ]
+        ]
 
 
 

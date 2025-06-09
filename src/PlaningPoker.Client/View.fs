@@ -1,5 +1,6 @@
 module View
 
+open Feliz.MaterialUI.themeStatic.theme.palette
 open Shared.Domain
 open Models
 open Feliz.MaterialUI
@@ -152,64 +153,61 @@ let renderStartView (classes:CustomStyles) state dispatch =
 
 let renderAdminView (classes:CustomStyles) isLoading inGameState dispatch =
     Html.div [
-        match inGameState.State with
-        | Beginning
-        | DisplayResult ->
-            // Start Round
+        prop.className "admin-view"
+        prop.children [
+            match inGameState.State with
+            | Beginning
+            | DisplayResult ->
+                // Start Round
+                Mui.button [
+                    button.fullWidth true
+                    button.variant.contained
+                    button.color.primary
+                    button.classes.root classes.loginSubmit
+                    button.children "Start Round!"
+                    button.disabled isLoading
+                    prop.onClick (fun e ->
+                      e.preventDefault ()
+                      dispatch (GameMsg StartRound)
+                    )
+                  ]
+            | InRound ->
+                // Finish Round
+                Mui.button [
+                    button.fullWidth true
+                    button.variant.contained
+                    button.color.primary
+                    button.classes.root classes.loginSubmit
+                    button.children "Finish the Round! (before everyone has choosen!)"
+                    button.disabled isLoading
+                    prop.onClick (fun e ->
+                      dispatch (GameMsg FinishRound)
+                    )
+                ]
+
             Mui.button [
                 button.fullWidth true
                 button.variant.contained
-                button.color.primary
+                button.color.secondary
                 button.classes.root classes.loginSubmit
-                button.children "Start Round!"
+                button.children "End Game!!!"
                 button.disabled isLoading
                 prop.onClick (fun e ->
-                  e.preventDefault ()
-                  dispatch (GameMsg StartRound)
-                )
-              ]
-        | InRound ->
-            // Finish Round
-            Mui.button [
-                button.fullWidth true
-                button.variant.contained
-                button.color.primary
-                button.classes.root classes.loginSubmit
-                button.children "Finish the Round! (before everyone has choosen!)"
-                button.disabled isLoading
-                prop.onClick (fun e ->
-                  dispatch (GameMsg FinishRound)
+                  dispatch (GameMsg EndGame)
                 )
             ]
-
-        Mui.button [
-            button.fullWidth true
-            button.variant.contained
-            button.color.secondary
-            button.classes.root classes.loginSubmit
-            button.children "End Game!!!"
-            button.disabled isLoading
-            prop.onClick (fun e ->
-              dispatch (GameMsg EndGame)
-            )
         ]
-
     ]
 
 
-let renderPlayerAdminView (classes:CustomStyles) isLoading player dispatch =
+let renderPlayerAdminView isLoading player dispatch =
     Html.div [
-        prop.style [
-                style.marginBottom 10
-                style.paddingTop 10
-            ]
         prop.children [
             Mui.button [
-
+                prop.className "player-remove-button"
                 button.fullWidth true
                 button.variant.contained
                 button.color.primary
-                button.classes.root classes.loginSubmit
                 button.children "Remove Player!"
                 button.disabled isLoading
                 prop.onClick (fun e ->
@@ -252,288 +250,235 @@ let renderDeck inGameState dispatch =
         TrustMeBro
         Observer
     ]
+
     Html.div [
-        prop.style [
-            style.marginTop 10
-            style.marginBottom 10
-            style.display.flex
-            style.flexWrap.wrap
-        ]
+        let blur = if inGameState.State <> InRound then "blur" else ""
+        prop.className $"card-selection {blur}"
         prop.children [
-            for c in cards do
+            let half = List.length cards / 2
+
+            let renderCard c =
+
                 match inGameState.State with
                 | InRound ->
                     let onClick = (fun () -> dispatch (GameMsg (PlayCard (Card.create c))))
-                    Elements.card 2 true onClick c
+                    Elements.card true onClick c
                 | _ ->
                     let onClick = fun () -> ()
-                    Elements.card 2 false onClick c
+                    Elements.card false onClick c
+
+            Html.div [
+                prop.className "card-row"
+                prop.children [
+                    for c in cards |> List.truncate half do
+                        renderCard c
+                ]
+            ]
+
+            Html.div [
+                prop.className "card-row"
+                prop.children [
+                    for c in cards |> List.skip half do
+                        renderCard c
+                ]
+            ]
+
         ]
     ]
 
 
 
-let renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch =
+
+let renderPlayerState index playerCount isLoading inGameState player currentPlayer isAdmin dispatch =
     let _, pname = Player.extract player
+
+    let renderPlayerCard () =
+        let playerCard = inGameState.PlayedCards |> List.tryFind (fun pc -> pc.Player = player)
+        match playerCard with
+        | Some playedCard ->
+            let isVisible =
+                match inGameState.State with
+                | InRound
+                | Beginning -> player = currentPlayer
+                | DisplayResult -> true
+
+            let visibleByCard =
+                match Card.extract playedCard.Card with
+                | Observer
+                | Coffee -> true
+                | _ -> isVisible
+
+            let cardValue = Card.extract playedCard.Card
+            Elements.card visibleByCard (fun() -> ()) cardValue
+        | None ->
+            Html.none
+
+
+
+    Html.div [
+        prop.className "player"
+        prop.style [
+            style.custom("--i", index)
+            style.custom("--player-count", playerCount)
+        ]
+        prop.children [
+            Html.div [
+                prop.className "player-card"
+                prop.children [
+                    renderPlayerCard ()
+                ]
+            ]
+            Html.div [ prop.className "player-name"; prop.text pname ]
+            if isAdmin then
+                renderPlayerAdminView isLoading player dispatch
+        ]
+    ]
+
+
+let renderMessages inGameState =
     Mui.grid [
         grid.item
-        grid.xs 2
+        grid.xs 8
         grid.children [
-            Mui.card [
-                card.classes.root classes.playerCard
-                card.children [
-                    Mui.typography [
-                        typography.align.center
-                        typography.variant.h4
-                        prop.text pname
-                    ]
-
-                    Html.div [
-                        prop.style [
-                            style.marginBottom 10
-                        ]
-                        prop.children [
-                            // Show Card
-                            match inGameState.PlayedCards |> List.tryFind (fun pc -> pc.Player = player) with
-                            | Some playedCard ->
-                                let isVisible =
-                                    match inGameState.State with
-                                    | InRound
-                                    | Beginning -> player = currentPlayer // only own card
-                                    | DisplayResult -> true // all cards
-                                let cardValue = Card.extract playedCard.Card
-                                Elements.card 1.6 isVisible (fun() -> ()) cardValue
-                            | None ->
-                                Html.div [
-                                    prop.style [
-                                        style.height 149
-                                    ]
-                                ]
-                        ]
-                    ]
-                    // Show Player Admin Panel
-                    if isAdmin then
-                        renderPlayerAdminView classes isLoading player dispatch
+            match inGameState.State with
+            | InRound ->
+                Mui.typography [
+                    typography.variant.h4
+                    typography.align.center
+                    typography.children "Choose your card!"
                 ]
-            ]
-        ]
+            | Beginning ->
+                Mui.typography [
+                    typography.variant.h4
+                    typography.align.center
+                    typography.children "Prepare yourself, the Game is starting soon!"
+                ]
+            | DisplayResult ->
+                Mui.typography [
+                    typography.variant.h4
+                    typography.align.center
+                    typography.children "Look, what we got here"
+                ]
 
+                Mui.table [
+                    Mui.tableHead [
+                        Mui.tableRow [
+                            Mui.tableCell "1"
+                            Mui.tableCell "2"
+                            Mui.tableCell "3"
+                            Mui.tableCell "5"
+                            Mui.tableCell "8"
+                            Mui.tableCell "13"
+                            Mui.tableCell "20"
+                            Mui.tableCell "40"
+                            Mui.tableCell "Stop"
+                            Mui.tableCell "Coffee"
+                            Mui.tableCell "WTF?"
+                            Mui.tableCell "Trust Me Bro!"
+                            Mui.tableCell "Observer"
+                        ]
+                    ]
+                    Mui.tableBody [
+
+                        let counts =
+                            [
+                                One
+                                Two
+                                Three
+                                Five
+                                Eight
+                                Thirteen
+                                Twenty
+                                Forty
+                                Stop
+                                Coffee
+                                Wtf
+                                TrustMeBro
+                                Observer
+                            ]
+                            |> List.map (fun v -> inGameState |> GameModel.countPlayedCards v)
+
+                        let maxCount = counts |> List.max
+
+
+                        Mui.tableRow [
+                            for count in counts do
+                                match count with
+                                | 0 ->
+                                    Mui.tableCell $"-"
+                                | c when c = maxCount ->
+                                    Mui.tableCell [
+                                        Mui.typography [
+                                            typography.variant.h5
+                                            typography.children $"{c}"
+                                            typography.color.success
+                                        ]
+                                    ]
+                                | _ ->
+                                    Mui.tableCell $"{count}"
+                        ]
+                    ]
+                ]
+        ]
     ]
 
-
-
-let renderInGameView classes isLoading currentPlayer gameId inGameState dispatch =
-    Mui.container [
+let renderInGameView classes isLoading currentPlayer gameId inGameState baseState dispatch =
+    let _,name = Player.extract currentPlayer
+    let gameId, admin = Game.extract inGameState.Game
+    let isAdmin = admin = currentPlayer
+    Html.div [
+        prop.className "game-container"
         prop.children [
-            let _,name = Player.extract currentPlayer
-            let gameId, admin = Game.extract inGameState.Game
-            let isAdmin = admin = currentPlayer
 
-            Elements.loadingSpinner isLoading
-
-            let row1 =
-                if inGameState.Players.Length <= 4 then
-                    inGameState.Players
-                else
-                    inGameState.Players.[0..3]
-
-            Mui.grid [
-                grid.container
-                grid.spacing 1
-                grid.children [
-
-                    Mui.grid [
-                        grid.item
-                        grid.xs 2
-                    ]
-
-                    for player in row1 do
-                        renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
-
-                    Mui.grid [
-                        grid.item
-                        grid.xs 2
-                    ]
-
+            Html.div [
+                prop.className "player-circle"
+                prop.children [
+                    let count = inGameState.Players |> List.length
+                    for i, player in inGameState.Players |> List.indexed do
+                        renderPlayerState i count isLoading inGameState player currentPlayer isAdmin dispatch
                 ]
             ]
 
-            let row2 =
-                if inGameState.Players.Length <= 6 then
-                    inGameState.Players.[4..inGameState.Players.Length-1]
-                else
-                    inGameState.Players.[4..5]
-            Mui.grid [
-                grid.container
-                grid.spacing 1
-                grid.children [
-                    if (row2.Length > 0) then
-                        renderPlayerState classes isLoading inGameState row2.[0] currentPlayer isAdmin dispatch
-                    else
-                        Mui.grid [
-                            grid.item
-                            grid.xs 2
-                        ]
 
-                    Mui.grid [
-                        grid.item
-                        grid.xs 8
-                        grid.classes.root classes.playerCard
-                        grid.children [
-                            match inGameState.State with
-                            | InRound ->
-                                Mui.typography [
-                                    typography.variant.h4
-                                    typography.align.center
-                                    typography.children "Choose your Card!"
-                                ]
-                            | Beginning ->
-                                Mui.typography [
-                                    typography.variant.h4
-                                    typography.align.center
-                                    typography.children "Prepare yourself, the Game is starting soon!"
-                                ]
-                            | DisplayResult ->
-                                Mui.typography [
-                                    typography.variant.h4
-                                    typography.align.center
-                                    typography.children "Look, what we got here"
-                                ]
-
-                                Mui.table [
-                                    Mui.tableHead [
-                                        Mui.tableRow [
-                                            Mui.tableCell "1"
-                                            Mui.tableCell "2"
-                                            Mui.tableCell "3"
-                                            Mui.tableCell "5"
-                                            Mui.tableCell "8"
-                                            Mui.tableCell "13"
-                                            Mui.tableCell "20"
-                                            Mui.tableCell "40"
-                                            Mui.tableCell "Stop"
-                                            Mui.tableCell "Coffee"
-                                            Mui.tableCell "WTF?"
-                                            Mui.tableCell "Trust Me Bro!"
-                                            Mui.tableCell "Observer"
-                                        ]
-                                    ]
-                                    Mui.tableBody [
-
-                                        let counts =
-                                            [
-                                                One
-                                                Two
-                                                Three
-                                                Five
-                                                Eight
-                                                Thirteen
-                                                Twenty
-                                                Forty
-                                                Stop
-                                                Coffee
-                                                Wtf
-                                                TrustMeBro
-                                                Observer
-                                            ]
-                                            |> List.map (fun v -> inGameState |> GameModel.countPlayedCards v)
-
-                                        let maxCount = counts |> List.max
-
-
-                                        Mui.tableRow [
-                                            for count in counts do
-                                                match count with
-                                                | 0 ->
-                                                    Mui.tableCell $"-"
-                                                | c when c = maxCount ->
-                                                    Mui.tableCell [
-                                                        Mui.typography [
-                                                            typography.variant.h5
-                                                            typography.children $"{c}"
-
-                                                            // Todo: typography. .color .secondary
-                                                        ]
-                                                    ]
-                                                | _ ->
-                                                    Mui.tableCell $"{count}"
-
-
-
-                                        ]
-                                    ]
-                                ]
-
-
-                        ]
-
-                    ]
-
-
-                    if (row2.Length > 1) then
-                        renderPlayerState classes isLoading inGameState row2.[1] currentPlayer isAdmin dispatch
-                    else
-                        Mui.grid [
-                            grid.item
-                            grid.xs 2
-                        ]
-
-                    ]
-                ]
-
-            let row3 =
-                if inGameState.Players.Length <= 10 then
-                    inGameState.Players.[6..inGameState.Players.Length - 1]
-                else
-                    inGameState.Players.[6..9]
-            Mui.grid [
-                grid.container
-                grid.spacing 1
-                grid.children [
-
-                    Mui.grid [
-                        grid.item
-                        grid.xs 2
-                    ]
-
-                    for player in row3 do
-                        renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
-
-                    Mui.grid [
-                        grid.item
-                        grid.xs 2
-                    ]
-
+            Html.div [
+                prop.className (if inGameState.State = InRound then "message-box-above" else "message-box")
+                prop.children [
+                    renderMessages inGameState
                 ]
             ]
 
-            if (inGameState.Players.Length > 10) then
-                let rest =
-                    inGameState.Players.[11..]
-                    |> List.chunkBySize 6
 
-                for chucks in rest do
 
-                    Mui.grid [
-                        grid.container
-                        grid.spacing 1
-                        grid.children [
+            if baseState.CardRecentlySelected then
+                Html.div [
+                    prop.className "overlay-fade"
+                    prop.children [
+                        inGameState.PlayedCards
+                        |> List.tryFind (fun pc -> pc.Player = currentPlayer)
+                        |> Option.map (fun pc -> Card.extract pc.Card)
+                        |> Option.map (fun card ->
+                            Html.div [
+                                prop.className "selected-card"
+                                prop.children [
+                                    Html.img [
+                                        prop.src (Elements.getImageFromCard card)
+                                    ]
+                                ]
+                            ]
+                        )
+                        |> Option.defaultValue Html.none
 
-                            for player in chucks do
-                                renderPlayerState classes isLoading inGameState player currentPlayer isAdmin dispatch
-                        ]
                     ]
-
-
+                ]
 
 
             renderDeck inGameState dispatch
 
-            if not isAdmin then
-                renderPlayerView classes isLoading currentPlayer dispatch
-
             if isAdmin then
                 renderAdminView classes isLoading inGameState dispatch
+
+
+
         ]
     ]
 
@@ -577,7 +522,7 @@ let view state dispatch =
                                     | CreateGameView _ ->
                                         renderStartView classes state dispatch
                                     | InGameView { CurrentGameState = (InGame inGameState); CurrentPlayer= player; GameId = gameId; } ->
-                                        renderInGameView classes state.IsLoading player gameId inGameState dispatch
+                                        renderInGameView classes state.IsLoading player gameId inGameState state dispatch
                                     | _ ->
                                         Mui.typography "Wait ... for the end ..."
 

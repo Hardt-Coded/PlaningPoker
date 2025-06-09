@@ -1,71 +1,6 @@
 @charset "utf-8";
 @import "tailwindcss";
-/*@source '../fable_modules/Feliz.DaisyUI.5.2.0/DaisyUI.fs';*/
-/*@source '../fable_modules/Feliz.DaisyUI.5.2.0/Modifiers.fs';*/
-/*@plugin "daisyui" {*/
-/*    themes: light --default, dark --prefersdark;*/
-/*}*/
 
-/*
-root = styles.create [
-                style.display.flex
-            ]
-            appBar = styles.create [
-                style.zIndex (theme.zIndex.drawer + 1)
-            ]
-            appBarTitle = styles.create [
-                style.flexGrow 1
-            ]
-
-            content = styles.create [
-                style.width 0  // TODO: is there a better way to prevent long code boxes extending past the screen?
-                style.flexGrow 1
-                style.padding (theme.spacing 3)
-            ]
-
-            toolbar = styles.create [
-                yield! theme.mixins.toolbar
-            ]
-
-            centerPaper = styles.create [
-                style.padding (theme.spacing(3, 2))
-                style.display.flex
-                style.flexDirection.column
-                style.justifyContent.center
-            ]
-
-            playerCard = styles.create [
-                style.padding (theme.spacing(1))
-                style.display.flex
-                style.flexDirection.column
-                style.justifyContent.center
-                style.minHeight 220
-            ]
-
-            loginPaper = styles.create [
-                style.marginTop (theme.spacing 8)
-                style.display.flex
-                style.flexDirection.column
-                style.alignItems.center
-                style.padding 20
-              ]
-
-            loginAvatar = styles.create [
-                style.margin (theme.spacing 1)
-                style.backgroundColor theme.palette.primary.main
-              ]
-
-            loginForm = styles.create [
-                style.width (length.perc 100)  // Allegedly fixes an IE 11 issue
-                style.marginTop (theme.spacing 1)
-              ]
-
-            loginSubmit = styles.create [
-                style.margin (theme.spacing(3, 0, 2))
-              ]
-
-
- */
 .poker-root {
     display: flex;
 }
@@ -76,11 +11,7 @@ root = styles.create [
 .poker-appBarTitle {
     flex-grow: 1;
 }
-.poker-content {
-    width: 0; /* TODO: is there a better way to prevent long code boxes extending past the screen? */
-    flex-grow: 1;
-    padding: 24px; /* theme.spacing(3) */
-}
+
 .poker-toolbar {
     padding-top: 24px; /* theme.mixins.toolbar */
     padding-bottom: 24px; /* theme.mixins.toolbar */
@@ -118,29 +49,211 @@ root = styles.create [
 }
 
 
-/**
- * Styles for CSS Playing Cards
- *
- * @author   Anika Henke <anika@selfthinker.org>
- * @license  CC BY-SA [http://creativecommons.org/licenses/by-sa/3.0]
- * @version  2011-06-14
- * @link     http://selfthinker.github.com/CSS-Playing-Cards/
- */
+body, html {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: #1e1e1e;
+    overflow: hidden;
+}
 
-/* card itself
-********************************************************************/
-.card {
-    width: 4.0em;
-    height: 5.6em;
+.poker-content {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    background: #1e1e1e;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+}
+
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Spieler im Kreis – JETZT BREITER */
+.player-circle {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    width: 60em;   /* war 40em */
+    height: 40em;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    --oval-x: 45em;
+    --oval-y: 30em;
+}
+@media (max-height: 1020px) {
+    .player-circle {
+        --oval-y: 20em;
+    }
+}
+
+@media (max-height: 1120px) {
+    .player-circle {
+        --oval-y: 24em;
+    }
+}
+
+@media (max-height: 1220px) {
+    .player-circle {
+        --oval-y: 28em;
+    }
 }
 
 
 
+.player {
+    position: absolute;
+    --angle: calc(360deg / var(--player-count) * var(--i));
+    left: calc(50% + var(--oval-x) * cos(var(--angle)));
+    top:  calc(50% + var(--oval-y) * sin(var(--angle)));
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+    width: 12.2em; /* Breite der Spielerkarte */
+    height: 12.0em; /* Höhe der Spielerkarte */
+}
 
+.player-card {
+    width: 6.6em;
+    height: 9.2em;
+    background-size: cover;
+    border-radius: 6px;
+    box-shadow: 0 0 4px rgba(0,0,0,0.6);
+    min-height: 9.2em;
+}
+
+.player-name {
+    margin-top: 0.3em;
+    font-size: 1.4em;
+    padding: 0.2em 0.5em;
+    color: #fff;
+}
+
+.player-remove-button {
+    transform: scale(0.7);
+}
+
+.message-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #333;
+    padding: 0.5em 1em;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1em;
+    text-align: center;
+    border: 2px solid crimson;
+    color: #fdfdfd;
+    z-index: 1000;
+}
+
+.message-box-above {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -30%);
+    background: #333;
+    padding: 0.2em 1em;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 0.6em;
+    text-align: center;
+    border: 2px solid crimson;
+    color: #fdfdfd;
+    z-index: 1000;
+}
+
+.card-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    gap: 1em;
+    z-index: 10;
+}
+
+.card-row {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+}
+
+
+.card {
+    width: 6.6em;
+    height: 9.2em;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card:hover {
+    transform: scale(1.1);
+}
+
+.admin-view {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+
+.overlay-fade {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #222;
+    color: #fff;
+    padding: 0em 0em;
+    border-radius: 12px;
+    font-size: 1.5em;
+    opacity: 1;
+    animation: fadeOut 2.5s forwards;
+    z-index: 2000;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 0;
+        display: none;
+    }
+    20% {
+        opacity: 1;
+        display: block;
+    }
+    70% {
+        opacity: 1;
+        display: block;
+    }
+    100% {
+        opacity: 0;
+        display: none;
+    }
+}
 
 

@@ -21,6 +21,12 @@
         <Content Include="public\configuration.js" />
         <Content Include="public\wtf.png" />
         <Content Include="public\observer.png" />
+        <Compile Include="public\Fable.Remoting.MsgPack.1.24.0\Write.fs" />
+        <Compile Include="public\Fable.Remoting.MsgPack.1.24.0\TypeShapeUtils.fs" />
+        <Compile Include="public\Fable.Remoting.MsgPack.1.24.0\TypeShape.fs" />
+        <Compile Include="public\Fable.Remoting.MsgPack.1.24.0\Read.fs" />
+        <Compile Include="public\Fable.Remoting.MsgPack.1.24.0\Format.fs" />
+        <Content Include="public\Fable.Remoting.MsgPack.1.24.0\Fable.Remoting.MsgPack.fableproj" />
         <Content Include="styles\styles.css" />
         <Content Remove="C:\Users\DanielHardt\.nuget\packages\fable.core\4.5.0\contentFiles\any\netstandard2.0\CHANGELOG.md" />
     </ItemGroup>

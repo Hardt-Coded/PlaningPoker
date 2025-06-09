@@ -29,6 +29,7 @@
         Message: string * string
         IsLoading:bool
         View: View
+        CardRecentlySelected: bool
     }
 
 
@@ -51,6 +52,7 @@
         | OnMessage of title:string * message:string
         | ClearError
         | ClearMessage
+        | ResetCardRecentlySelectedFlag
 
         | ToggleTheme
         | IsLoading of bool

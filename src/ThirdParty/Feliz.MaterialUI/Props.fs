@@ -12261,6 +12261,15 @@ type typography =
 
 module typography =
 
+
+  /// The color of the component. Unless provided, the value is taken from the `severity` prop. It supports both default and custom theme colors, which can be added as shown in the [palette customization guide](https://mui.com/material-ui/customization/palette/#adding-new-colors).
+  [<Erase>]
+  type color =
+    static member inline error = Interop.mkAttr "color" "error"
+    static member inline info = Interop.mkAttr "color" "info"
+    static member inline success = Interop.mkAttr "color" "success"
+    static member inline warning = Interop.mkAttr "color" "warning"
+
   /// Set the text-align on the component.
   [<Erase>]
   type align =

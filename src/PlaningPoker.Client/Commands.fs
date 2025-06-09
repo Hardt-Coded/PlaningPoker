@@ -212,85 +212,12 @@ let joinGameFromCookiesOrCheckGameExists () =
             dispatch <| IsLoading false
         } |> Async.StartImmediate
 
-(*let createGame currentPlayer =
+let resetSelectedCardFlag (timeout:int) =
     fun dispatch ->
         async {
-            dispatch <| IsLoading true
-            try
-                let! state = pokerApi.createGame currentPlayer
-                match state with
-                | Ok state ->
-                    match state with
-                    | GameModel.GotGameId gameId ->
-                        dispatch <| GameCreated (currentPlayer, gameId, state)
-                    | _ ->
-                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
-                | Error e -> dispatch <| OnError e
-            with
-            | ex ->
-                dispatch <| OnError ex.Message
-
-            dispatch <| IsLoading false
+            do! Async.Sleep timeout
+            dispatch <| ResetCardRecentlySelectedFlag
         } |> Async.StartImmediate
-
-
-
-
-
-let joinGame gameId currentPlayer =
-    fun dispatch ->
-        async {
-            dispatch <| IsLoading true
-            try
-                let! state = pokerApi.joinGame gameId currentPlayer
-                match state with
-                | Ok state ->
-                    match state with
-                    | GameModel.GotGameId gameId ->
-                        dispatch <| GameJoined (currentPlayer, gameId, state)
-                    | _ ->
-                        dispatch <| OnError "Game Server doesn't switch to the right Game State. Please try again!"
-                | Error e -> dispatch <| OnError e
-            with
-            | ex ->
-                dispatch <| OnError ex.Message
-
-            dispatch <| IsLoading false
-        } |> Async.StartImmediate
-
-// "Game doesn't exists"
-let endGame gameId currentPlayer =
-    fun dispatch ->
-        async {
-            dispatch <| IsLoading true
-            try
-                let! state = pokerApi.endGame gameId currentPlayer
-
-                match state with
-                | Ok state ->
-                    dispatch <| SetCurrentGameState state
-                | Error "Game doesn't exists" -> // exception, if the game not exisit any more, leave display no error and end the game
-                    dispatch <| SetCurrentGameState (GameEnded gameId)
-                | Error e -> dispatch <| OnError e
-            with
-            | ex ->
-                dispatch <| OnError ex.Message
-
-            dispatch <| IsLoading false
-        } |> Async.StartImmediate
-
-
-let leaveGame gameId currentPlayer playerToLeave =
-    sendCommand (fun () -> pokerApi.leaveGame gameId currentPlayer playerToLeave)
-
-let startRound gameId currentPlayer =
-    sendCommand (fun () -> pokerApi.startRound gameId currentPlayer)
-
-let finishRound gameId currentPlayer =
-    sendCommand (fun () -> pokerApi.finishRound gameId currentPlayer)
-
-let playCard gameId currentPlayer card =
-    sendCommand (fun () -> pokerApi.playCard gameId currentPlayer card)*)
 
 
 let setCookies gameId player =
