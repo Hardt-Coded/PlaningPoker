@@ -55,7 +55,7 @@ module SignalR =
 
     open Fable.Core.JsInterop
 
-    let private openSignalRConnection (info:SignalRConnectionInfo) (gameId:string) onNewState =
+    let private openSignalRConnection (gameId:string) onNewState =
         async {
 
             JS.console.log "signalr init connection!"
@@ -69,7 +69,7 @@ module SignalR =
             let connection =
                 signalR.CreateHubConnectionBuilder()
                     //.withUrl(info.url, !!{| accessTokenFactory = (fun () -> info.accessToken) |})
-                    .withUrl("http://localhost:7071/api", option)
+                    .withUrl($"{pokerBaseUrl}/api", option)
                     .withAutomaticReconnect()
                     .build()
 
@@ -90,8 +90,7 @@ module SignalR =
             async {
                 try
                     let gameId = gameId |> GameId.extract
-                    let! info = getConnectionInfo gameId
-                    let! connection = openSignalRConnection info gameId (fun data ->
+                    let! connection = openSignalRConnection gameId (fun data ->
                         JS.console.log("SignalR new state received")
                         JS.console.dir(data)
                         let payload = Json.parseAs<MessageFormat> (data |> string)

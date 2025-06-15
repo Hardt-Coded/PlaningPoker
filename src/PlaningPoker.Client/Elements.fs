@@ -98,19 +98,19 @@ let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
 let getImageFromCard input =
     match input with
-    | One       -> "./card1_transparent_small.png"
-    | Two       -> "./card2_transparent_small.png"
-    | Three     -> "./card3_transparent_small.png"
-    | Five      -> "./card5_transparent_small.png"
-    | Eight     -> "./card8_transparent_small.png"
-    | Thirteen  -> "./card13_transparent_small.png"
-    | Twenty    -> "./card20_transparent_small.png"
-    | Forty    ->  "./card40_transparent_small.png"
-    | Coffee    -> "./pause_transparent_small.png"
-    | Stop      -> "./stop_transparent_small.png"
-    | Wtf       -> "./wtf_transparent_small.png"
-    | TrustMeBro ->"./trustmebro_transparent_small.png"
-    | Observer ->  "./observer_transparent_small.png"
+    | One      -> "./images/card1_transparent_small.png"
+    | Two      -> "./images/card2_transparent_small.png"
+    | Three    -> "./images/card3_transparent_small.png"
+    | Five     -> "./images/card5_transparent_small.png"
+    | Eight    -> "./images/card8_transparent_small.png"
+    | Thirteen -> "./images/card13_transparent_small.png"
+    | Twenty   -> "./images/card20_transparent_small.png"
+    | Forty    -> "./images/card40_transparent_small.png"
+    | Coffee   -> "./images/pause_transparent_small.png"
+    | Stop     -> "./images/stop_transparent_small.png"
+    | Wtf      -> "./images/wtf_transparent_small.png"
+    | TrustMeBro->"./images/trustmebro_transparent_small.png"
+    | Observer -> "./images/observer_transparent_small.png"
 
 let card isOpen (onClick:unit->unit) (input:CardValue) =
     let pic = getImageFromCard input
@@ -134,7 +134,7 @@ let card isOpen (onClick:unit->unit) (input:CardValue) =
             prop.onClick (fun _ -> onClick())
             prop.children [
                 Html.img [
-                    prop.src "./card_back_transparent_small.png"
+                    prop.src "./images/card_back_transparent_small.png"
                     prop.style [
                     ]
                 ]
