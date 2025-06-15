@@ -234,7 +234,7 @@ let renderPlayerView (classes:CustomStyles) isLoading player dispatch =
         ]
     ]
 
-let renderDeck inGameState dispatch =
+let renderDeck cardTheme inGameState dispatch =
     let cards = [
         One
         Two
@@ -262,10 +262,10 @@ let renderDeck inGameState dispatch =
                 match inGameState.State with
                 | InRound ->
                     let onClick = (fun () -> dispatch (GameMsg (PlayCard (Card.create c))))
-                    Elements.card true onClick c
+                    Elements.card true cardTheme onClick c
                 | _ ->
                     let onClick = fun () -> ()
-                    Elements.card false onClick c
+                    Elements.card false cardTheme onClick c
 
             Html.div [
                 prop.className "card-row"
@@ -289,7 +289,7 @@ let renderDeck inGameState dispatch =
 
 
 
-let renderPlayerState index playerCount isLoading inGameState player currentPlayer isAdmin dispatch =
+let renderPlayerState index cardTheme playerCount isLoading inGameState player currentPlayer isAdmin dispatch =
     let _, pname = Player.extract player
 
     let renderPlayerCard () =
@@ -309,7 +309,7 @@ let renderPlayerState index playerCount isLoading inGameState player currentPlay
                 | _ -> isVisible
 
             let cardValue = Card.extract playedCard.Card
-            Elements.card visibleByCard (fun() -> ()) cardValue
+            Elements.card visibleByCard cardTheme (fun() -> ()) cardValue
         | None ->
             Html.none
 
@@ -435,7 +435,7 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState baseStat
                 prop.children [
                     let count = inGameState.Players |> List.length
                     for i, player in inGameState.Players |> List.indexed do
-                        renderPlayerState i count isLoading inGameState player currentPlayer isAdmin dispatch
+                        renderPlayerState i baseState.CardTheme count isLoading inGameState player currentPlayer isAdmin dispatch
                 ]
             ]
 
@@ -461,7 +461,7 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState baseStat
                                 prop.className "selected-card"
                                 prop.children [
                                     Html.img [
-                                        prop.src (Elements.getImageFromCard card)
+                                        prop.src (Elements.getImageFromCard baseState.CardTheme card |> fst)
                                     ]
                                 ]
                             ]
@@ -472,7 +472,7 @@ let renderInGameView classes isLoading currentPlayer gameId inGameState baseStat
                 ]
 
 
-            renderDeck inGameState dispatch
+            renderDeck baseState.CardTheme inGameState dispatch
 
             if isAdmin then
                 renderAdminView classes isLoading inGameState dispatch
@@ -508,6 +508,8 @@ let view state dispatch =
                                         Elements.toolbar state.Theme None None dispatch
                                     | InGameView { CurrentGameState = _; CurrentPlayer= player; GameId = gameId; } ->
                                         Elements.toolbar state.Theme (Some player) (Some gameId) dispatch
+
+
                                 ]
                             ]
 

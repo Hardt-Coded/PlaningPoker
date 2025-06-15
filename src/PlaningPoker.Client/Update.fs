@@ -28,6 +28,7 @@ let init isDarkMode =
             else
                 JoinGameView {| Name = ""; Id = id |}
         CardRecentlySelected = false
+        CardTheme = Scifi
     }
 
     let cmdResult =
@@ -58,6 +59,7 @@ let update (msg:Msg) state =
             IsLoading = false
             View = CreateGameView {| Name = "" |}
             CardRecentlySelected = false
+            CardTheme = Scifi
         }, Cmd.batch [  [ Commands.removeCookies () ]; Cmd.ofMsg (Navigate [ "" ]) ]
 
     | CreateGameView viewState, CreateGame ->
@@ -235,6 +237,8 @@ let update (msg:Msg) state =
         { state with Error = "" }, Cmd.none
     | _, ClearMessage ->
         { state with Message = ("","") }, Cmd.none
+    | _, SwitchCardTheme theme ->
+        { state with CardTheme = theme }, Cmd.none
     | _, ToggleTheme ->
         let newTheme =
             match state.Theme with
