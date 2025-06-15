@@ -12,7 +12,9 @@ let joinLink (gameid:GameId) =
         prop.href linkAddress
         link.variant "h6"
         link.children "Join Link"
-
+        prop.style [
+            style.marginRight 150
+        ]
     ]
 
 
@@ -43,7 +45,44 @@ let toolbar theme currentPlayer (gameId:GameId option) dispatch =
             joinLink gameId
 
 
+        // Theme Selection
+        Mui.typography [
+            typography.variant.h6
+            prop.style [
+                style.marginRight 20
+            ]
+            typography.children $"Card Theme:"
+        ]
 
+        Mui.button [
+            button.color.primary
+            button.variant.outlined
+            prop.onClick (fun _ -> dispatch <| SwitchCardTheme Monster)
+            prop.text "Monster"
+            prop.style [
+                style.marginRight 5
+            ]
+        ]
+
+        Mui.button [
+            button.color.primary
+            button.variant.outlined
+            prop.onClick (fun _ -> dispatch <| SwitchCardTheme Scifi)
+            prop.text "Scifi"
+            prop.style [
+                style.marginRight 5
+            ]
+        ]
+
+        Mui.button [
+            button.color.primary
+            button.variant.outlined
+            prop.onClick (fun _ -> dispatch <| SwitchCardTheme Unicorn)
+            prop.text "Unicorn"
+            prop.style [
+                style.marginRight 5
+            ]
+        ]
 
 
         //Light/dark mode button
@@ -96,24 +135,33 @@ let loadingSpinner isVisible =
 let private rnd = System.Random(System.Guid.NewGuid().GetHashCode())
 
 
-let getImageFromCard input =
-    match input with
-    | One      -> "./images/card1_transparent_small.png"
-    | Two      -> "./images/card2_transparent_small.png"
-    | Three    -> "./images/card3_transparent_small.png"
-    | Five     -> "./images/card5_transparent_small.png"
-    | Eight    -> "./images/card8_transparent_small.png"
-    | Thirteen -> "./images/card13_transparent_small.png"
-    | Twenty   -> "./images/card20_transparent_small.png"
-    | Forty    -> "./images/card40_transparent_small.png"
-    | Coffee   -> "./images/pause_transparent_small.png"
-    | Stop     -> "./images/stop_transparent_small.png"
-    | Wtf      -> "./images/wtf_transparent_small.png"
-    | TrustMeBro->"./images/trustmebro_transparent_small.png"
-    | Observer -> "./images/observer_transparent_small.png"
+let getImageFromCard theme input =
+    let themePrefix =
+        match theme with
+        | Monster -> "monster"
+        | Scifi -> "scifi"
+        | Unicorn -> "unicorn"
 
-let card isOpen (onClick:unit->unit) (input:CardValue) =
-    let pic = getImageFromCard input
+    let frontSide =
+        match input with
+        | One       -> $"./images/{themePrefix}_card_1.png"
+        | Two       -> $"./images/{themePrefix}_card_2.png"
+        | Three     -> $"./images/{themePrefix}_card_3.png"
+        | Five      -> $"./images/{themePrefix}_card_5.png"
+        | Eight     -> $"./images/{themePrefix}_card_8.png"
+        | Thirteen  -> $"./images/{themePrefix}_card_13.png"
+        | Twenty    -> $"./images/{themePrefix}_card_20.png"
+        | Forty     -> $"./images/{themePrefix}_card_40.png"
+        | Coffee    -> $"./images/{themePrefix}_card_pause.png"
+        | Stop      -> $"./images/{themePrefix}_card_stop.png"
+        | Wtf       -> $"./images/{themePrefix}_card_wtf.png"
+        | TrustMeBro-> $"./images/{themePrefix}_card_trustmebro.png"
+        | Observer  -> $"./images/{themePrefix}_card_observer.png"
+
+    frontSide, $"./images/{themePrefix}_card_backside.png"
+
+let card isOpen theme (onClick:unit->unit) (input:CardValue) =
+    let (pic, backside) = getImageFromCard theme input
 
     if isOpen then
         Html.div [
@@ -134,7 +182,7 @@ let card isOpen (onClick:unit->unit) (input:CardValue) =
             prop.onClick (fun _ -> onClick())
             prop.children [
                 Html.img [
-                    prop.src "./images/card_back_transparent_small.png"
+                    prop.src backside
                     prop.style [
                     ]
                 ]

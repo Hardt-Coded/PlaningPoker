@@ -10,6 +10,10 @@
     open SignalRHelper
 
 
+    type CardTheme =
+        | Monster
+        | Scifi
+        | Unicorn
 
     type InGameArgs = {
         CurrentPlayer: Player;
@@ -30,6 +34,7 @@
         IsLoading:bool
         View: View
         CardRecentlySelected: bool
+        CardTheme: CardTheme
     }
 
 
@@ -55,6 +60,7 @@
         | ResetCardRecentlySelectedFlag
 
         | ToggleTheme
+        | SwitchCardTheme of CardTheme
         | IsLoading of bool
         | Navigate of string list
         | SetCookies
