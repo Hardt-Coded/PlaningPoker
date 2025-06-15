@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <VersionPrefix>5.13.7</VersionPrefix>
+    <VersionSuffix>alpha.8</VersionSuffix>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NpmDependencies>
+      <NpmPackage Name="@mui/material" Version="gte 5.13 lt 6" ResolutionStrategy="max" />
+      <NpmPackage Name="@mui/styles" Version="gte 5.13 lt 6" ResolutionStrategy="max" />
+      <NpmPackage Name="@mui/lab" Version="5.0.0-alpha.135" />
+    </NpmDependencies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Flatten.fs" />
+    <Compile Include="Misc.fs" />
+    <Compile Include="Bindings.fs" />
+    <Compile Include="DatePickersModels.fs" />
+    <Compile Include="Autocomplete.fs" />
+    <Compile Include="Hooks.fs" />
+    <Compile Include="Colors.fs" />
+    <Compile Include="Localization.fs" />
+    <Compile Include="Styles.fs" />
+    <Compile Include="Theme.fs" />
+    <Compile Include="ThemeOverrides.fs" />
+    <Compile Include="ThemeProps.fs" />
+    <Compile Include="ClassNames.fs" />
+    <Compile Include="ClassesProps.fs" />
+    <Compile Include="MuiComponents.fs" />
+    <Compile Include="Props.fs" />
+    <Compile Include="Mui.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Fable.Core" Version="4.5.0" />
+    <PackageReference Include="Fable.React" Version="9.4.0" />
+    <PackageReference Include="Feliz" Version="2.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Add source files to "fable" folder in Nuget package -->
+    <Content Include="*.fsproj; **\*.fs; **\*.fsi" PackagePath="fable\" />
+  </ItemGroup>
+</Project>

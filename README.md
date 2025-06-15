@@ -1,23 +1,17 @@
-# F#ncy Planing Poker
+Install Dependencies
+
+    npm install yarn -g
+    npm install -g azure-functions-core-tools
 
 
-## Build
+Restore dotnet tools:
 
-```
-// restore tools
-dotnet tool restore
+    dotnet tool restore
 
-// restore dependencies
-yarn install
+And start it in development mode:
 
-// run client
-yarn start
-```
+    dotnet run
 
 
-## Attention! Build error on material-ui
 
-on both errors, change the type to "obj" in the Client/.fable-build/fable_modules/Feliz.MaterialUI.1.2.6/xxxxxx.fs file.
-
-look at the error message, it's easy to modify!
 

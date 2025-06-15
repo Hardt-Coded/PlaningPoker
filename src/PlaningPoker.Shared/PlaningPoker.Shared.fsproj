@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>PlaningPoker2.Shared</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Errors.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="ResultBuilder.fs" />
+    <Compile Include="Shared.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FsToolkit.ErrorHandling" Version="5.0.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "AzureSignalRConnectionString": "Endpoint=https://planing-poker.service.signalr.net;AccessKey=lkwqyr3vtYK0UdBB18lPXK1NGVYrV92w9oBuclXFTAU=;Version=1.0;",
+        "AzureSignalRServiceTransportType": "Transient"
+    },
+    "Host": {
+        "CORS": "http://localhost:8080",
+        "CORSCredentials": true
+    }
+}

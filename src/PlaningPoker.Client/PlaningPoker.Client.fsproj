@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>PlaningPoker.Client</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <Content Include="index.html" />
+        <Compile Include="SignalRHelper.fs" />
+        <Compile Include="Models.fs" />
+        <Compile Include="Cookies.fs" />
+        <Compile Include="Styling.fs" />
+        <Compile Include="Elements.fs" />
+        <Compile Include="Dialog.fs" />
+        <Compile Include="Commands.fs" />
+        <Compile Include="Update.fs" />
+        <Compile Include="View.fs" />
+        <Compile Include="AppComponent.fs" />
+        <Compile Include="App.fs" />
+        <Content Include="public\configuration.js" />
+        <Content Include="public\images\13.png" />
+        <Content Include="public\images\pause.png" />
+        <Content Include="public\images\pause2.png" />
+        <Content Include="public\images\stop.png" />
+        <Content Include="public\images\stop_transparent.png" />
+        <Content Include="public\images\trustmebro.png" />
+        <Content Include="public\images\wtf_transparent.png" />
+        <Content Include="public\images\wtf_transparent_small.png" />
+        <Content Include="public\images\card1.png" />
+        <Content Include="public\images\card2.png" />
+        <Content Include="public\images\card2_transparent.png" />
+        <Content Include="public\images\card2_transparent_small.png" />
+        <Content Include="public\images\card3.png" />
+        <Content Include="public\images\card3_transparent.png" />
+        <Content Include="public\images\card3_transparent_small.png" />
+        <Content Include="public\images\card5.png" />
+        <Content Include="public\images\card5_transparent.png" />
+        <Content Include="public\images\card5_transparent_small.png" />
+        <Content Include="public\images\card8.png" />
+        <Content Include="public\images\card8_transparent.png" />
+        <Content Include="public\images\card8_transparent_small.png" />
+        <Content Include="public\images\card13_transparent.png" />
+        <Content Include="public\images\card13_transparent_small.png" />
+        <Content Include="public\images\card20.png" />
+        <Content Include="public\images\card20_transparent.png" />
+        <Content Include="public\images\card20_transparent_small.png" />
+        <Content Include="public\images\card40.png" />
+        <Content Include="public\images\card40_transparent.png" />
+        <Content Include="public\images\card40_transparent_small.png" />
+        <Content Include="public\images\card_back.png" />
+        <Content Include="public\images\card_back_transparent.png" />
+        <Content Include="public\images\card_back_transparent_small.png" />
+        <Content Include="public\images\observer_transparent.png" />
+        <Content Include="public\images\observer_transparent_small.png" />
+        <Content Include="public\images\pause_transparent.png" />
+        <Content Include="public\images\pause_transparent_small.png" />
+        <Content Include="public\images\wtf.png" />
+        <Content Include="public\images\observer.png" />
+        <Content Include="public\images\favicon.png" />
+        <Content Include="public\images\card1_transparent.png" />
+        <Content Include="public\images\card1_transparent_small.png" />
+        <Content Include="public\images\stop_transparent_small.png" />
+        <Content Include="public\images\trustmebro_transparent.png" />
+        <Content Include="public\images\trustmebro_transparent_small.png" />
+        <Content Include="styles\styles.css" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Fable.Core" Version="4.5.0" />
+        <PackageReference Include="Fable.Elmish.HMR" Version="7.0.0" />
+        <PackageReference Include="Fable.Elmish.React" Version="4.0.0" />
+        <PackageReference Include="Fable.Remoting.Client" Version="7.34.0" />
+        <PackageReference Include="Fable.SimpleHttp" Version="3.6.0" />
+        <PackageReference Include="Feliz" Version="2.9.0" />
+        <PackageReference Include="Feliz.Router" Version="4.0.0" />
+        <PackageReference Include="Feliz.UseElmish" Version="2.5.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\PlaningPoker.Shared\PlaningPoker.Shared.fsproj" />
+      <ProjectReference Include="..\ThirdParty\Feliz.MaterialUI.Icons\Feliz.MaterialUI.Icons.fsproj" />
+      <ProjectReference Include="..\ThirdParty\Feliz.MaterialUI\Feliz.MaterialUI.fsproj" />
+    </ItemGroup>
+</Project>

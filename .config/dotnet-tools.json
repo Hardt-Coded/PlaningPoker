@@ -1,18 +1,18 @@
 {
-  "version": 1,
-  "isRoot": true,
-  "tools": {
-    "femto": {
-      "version": "0.12.0",
-      "commands": [
-        "femto"
-      ]
-    },
-    "fable": {
-      "version": "4.1.4",
-      "commands": [
-        "fable"
-      ]
+    "version": 1,
+    "isRoot": true,
+    "tools": {
+        "femto": {
+            "version": "0.12.0",
+            "commands": [
+                "femto"
+            ]
+        },
+        "fable": {
+            "version": "4.25.0",
+            "commands": [
+                "fable"
+            ]
+        }
     }
-  }
 }

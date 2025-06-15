@@ -1,29 +1,36 @@
 {
-  "private": true,
-  "scripts": {
-    "prestart": "dotnet tool restore",
-    "start": "dotnet fable watch ./src/Client --outDir ./src/Client/.fable-build --run vite",
-    "prebuild": "dotnet tool restore",
-    "build": "dotnet fable ./src/Client --outDir ./src/Client/.fable-build --run vite build"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.24",
-    "remotedev": "^0.2.4",
-    "vite": "^4.3.9"
-  },
-  "dependencies": {
-    "@material-ui/core": "^4.11.3",
-    "@material-ui/icons": "^4.9.1",
-    "@material-ui/lab": "^4.0.0-alpha.57",
-    "@microsoft/signalr": "^6.0.0",
-    "js-cookie": "^2.2.1",
-    "mdi-material-ui": "^6.19.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwindcss": "^3.3.2",
-    "use-sync-external-store": "^1.2.0",
-    "vite-plugin-commonjs": "^0.8.0"
-  }
+    "private": true,
+    "scripts": {
+        "prestart": "dotnet tool restore",
+        "dev": "vite",
+        "start": "vite",
+        "prebuild": "dotnet tool restore",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@types/node": "^20.9.1",
+        "@vitejs/plugin-react": "^4.2.0",
+        "sass": "^1.69.5",
+        "tailwindcss": "^4.1.8",
+        "vite": "^6.3.5"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
+        "@microsoft/signalr": "^8.0.7",
+        "@mui/base": "5.0.0-beta.60",
+        "@mui/icons-material": "^5.13.7",
+        "@mui/lab": "5.0.0-alpha.135",
+        "@mui/material": "^5.13.7",
+        "@mui/styles": "^5.13.7",
+        "@mui/system": "^5.13.7",
+        "@tailwindcss/postcss": "^4.1.8",
+        "@tailwindcss/vite": "^4.1.8",
+        "daisyui": "^5.0.43",
+        "js-cookie": "^3.0.5",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "use-sync-external-store": "^1.2.0",
+        "vite-plugin-fable": "^0.1.1"
+    }
 }
